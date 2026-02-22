@@ -1,0 +1,17 @@
+/// <reference types="node" />
+import path from "path";
+import dotenv from "dotenv";
+import { defineConfig } from "prisma/config";
+
+// Explicitly load .env from the same directory as this config file
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+  },
+  datasource: {
+    url: process.env.DATABASE_URL,
+  },
+});

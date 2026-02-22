@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  patient
+  receptionist
+  dentist
+  admin
+}
+
+enum BookingStatus {
+  pending_payment
+  confirmed
+  expired
+  cancelled
+  completed
+  no_show
+  refund_pending
+  refunded
+}
+
+enum PaymentStatus {
+  pending
+  captured
+  failed
+  refunded
+}
+
+enum NotificationType {
+  booking_confirmation
+  reminder
+  payment_receipt
+  cancellation
+  announcement
+}
+
+enum ContentType {
+  testimonial
+  blog
+  offer
+  gallery
+  career
+}
+
+enum ContentStatus {
+  draft
+  approved
+  published
+  removed
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  phone         String         @unique
+  passwordHash  String
+  role          Role           @default(patient)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sessions      Session[]
+  notifications Notification[]
+  patient       Patient?
+  dentist       Dentist?
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Patient {
+  id           String         @id @default(uuid())
+  userId       String         @unique
+  user         User           @relation(fields: [userId], references: [id])
+  dob          DateTime?
+  medicalNotes String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  bookings     Booking[]
+  loyalty      LoyaltyPoint[]
+  referrals    Referral[]     @relation("Referrer")
+  referredBy   Referral?      @relation("Referred")
+}
+
+model Dentist {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id])
+  specialization String
+  bio            String?
+  photoUrl       String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  slots          Slot[]
+  bookings       Booking[]
+}
+
+model TreatmentCategory {
+  id         String      @id @default(uuid())
+  name       String
+  treatments Treatment[]
+}
+
+model Treatment {
+  id             String            @id @default(uuid())
+  categoryId     String
+  category       TreatmentCategory @relation(fields: [categoryId], references: [id])
+  name           String
+  slug           String            @unique
+  description    String
+  procedureSteps Json?
+  faqs           Json?
+  priceRange     String?
+  imageUrl       String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  bookings       Booking[]
+}
+
+model Slot {
+  id              String    @id @default(uuid())
+  dentistId       String
+  dentist         Dentist   @relation(fields: [dentistId], references: [id])
+  date            DateTime  @db.Date
+  startTime       String
+  endTime         String
+  isAvailable     Boolean   @default(true)
+  isEmergency     Boolean   @default(false)
+  holdExpiresAt   DateTime?
+  heldBySessionId String?
+  version         Int       @default(0)
+  booking         Booking?
+
+  @@unique([dentistId, date, startTime])
+}
+
+model Booking {
+  id                 String        @id @default(uuid())
+  patientId          String
+  patient            Patient       @relation(fields: [patientId], references: [id])
+  dentistId          String
+  dentist            Dentist       @relation(fields: [dentistId], references: [id])
+  treatmentId        String
+  treatment          Treatment     @relation(fields: [treatmentId], references: [id])
+  slotId             String        @unique
+  slot               Slot          @relation(fields: [slotId], references: [id])
+  status             BookingStatus @default(pending_payment)
+  paymentId          String?
+  reminderSent       Boolean       @default(false)
+  rescheduleCount    Int           @default(0)
+  notes              String?
+  feedbackSent       Boolean       @default(false)
+  cancellationReason String?
+  idempotencyKey     String?       @unique
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  payment            Payment?
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  bookingId         String        @unique
+  booking           Booking       @relation(fields: [bookingId], references: [id])
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  amount            Int
+  status            PaymentStatus @default(pending)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  refund            Refund?
+}
+
+model Refund {
+  id               String   @id @default(uuid())
+  paymentId        String   @unique
+  payment          Payment  @relation(fields: [paymentId], references: [id])
+  razorpayRefundId String?
+  amount           Int
+  status           String   @default("pending")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+model Content {
+  id        String        @id @default(uuid())
+  type      ContentType
+  title     String
+  slug      String        @unique
+  body      Json?
+  status    ContentStatus @default(draft)
+  featured  Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model LoyaltyPoint {
+  id              String   @id @default(uuid())
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id])
+  points          Int
+  transactionType String
+  reason          String?
+  createdAt       DateTime @default(now())
+}
+
+model Referral {
+  id            String   @id @default(uuid())
+  referrerId    String
+  referrer      Patient  @relation("Referrer", fields: [referrerId], references: [id])
+  referredId    String   @unique
+  referredPatient Patient  @relation("Referred", fields: [referredId], references: [id])
+  status        String   @default("pending")
+  rewardClaimed Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
