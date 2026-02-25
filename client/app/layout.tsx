@@ -25,9 +25,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth">
       <body
-        className={`${notoSerif.variable} ${notoSans.variable} antialiased font-body bg-background-light text-navy-deep dark:bg-background-dark dark:text-pearl min-h-screen flex flex-col`}
+        className={`${notoSerif.variable} ${notoSans.variable} antialiased font-body bg-background-light text-slate-900 dark:bg-background-dark dark:text-slate-100 min-h-screen flex flex-col`}
       >
         <Header />
         <main className="flex-grow pt-20">
