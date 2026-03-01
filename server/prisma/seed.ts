@@ -4,23 +4,22 @@ import * as bcrypt from 'bcryptjs';
 async function main() {
     console.log('🌱 Seeding database...');
 
-    // ── 1. Treatment Category ──────────────────────────────────────────────
-    const generalCategory = await prisma.treatmentCategory.upsert({
-        where: { id: 'cat-general' },
-        update: {},
-        create: {
-            id: 'cat-general',
-            name: 'General Dentistry',
-        },
+    // ── STEP 0: Clean slate — delete in FK-safe order ──────────────────────
+    console.log('🧹 Cleaning existing data...');
+    await prisma.slot.deleteMany({});
+    await prisma.dentist.deleteMany({});
+    await prisma.$executeRaw`DELETE FROM "User" WHERE role = 'dentist'`;
+    await prisma.treatment.deleteMany({});
+    await prisma.treatmentCategory.deleteMany({});
+    console.log('✅ Cleaned');
+
+    // ── 1. Treatment Categories ────────────────────────────────────────────
+    const generalCategory = await prisma.treatmentCategory.create({
+        data: { id: 'cat-general', name: 'General Dentistry' },
     });
 
-    const cosmeticCategory = await prisma.treatmentCategory.upsert({
-        where: { id: 'cat-cosmetic' },
-        update: {},
-        create: {
-            id: 'cat-cosmetic',
-            name: 'Cosmetic Dentistry',
-        },
+    const cosmeticCategory = await prisma.treatmentCategory.create({
+        data: { id: 'cat-cosmetic', name: 'Cosmetic Dentistry' },
     });
 
     // ── 2. Treatments ──────────────────────────────────────────────────────
@@ -75,13 +74,7 @@ async function main() {
         },
     ];
 
-    for (const t of treatments) {
-        await prisma.treatment.upsert({
-            where: { slug: t.slug },
-            update: {},
-            create: t,
-        });
-    }
+    await prisma.treatment.createMany({ data: treatments });
     console.log(`✅ ${treatments.length} treatments seeded`);
 
     // ── 3. Dentist Users ───────────────────────────────────────────────────
@@ -97,10 +90,8 @@ async function main() {
     const dentistIds: string[] = [];
 
     for (const du of dentistUsers) {
-        const user = await prisma.user.upsert({
-            where: { email: du.email },
-            update: {},
-            create: {
+        const user = await prisma.user.create({
+            data: {
                 id: du.id,
                 name: du.name,
                 email: du.email,
@@ -110,10 +101,8 @@ async function main() {
             },
         });
 
-        const dentist = await prisma.dentist.upsert({
-            where: { userId: user.id },
-            update: {},
-            create: {
+        const dentist = await prisma.dentist.create({
+            data: {
                 userId: user.id,
                 specialization: du.specialization,
             },
@@ -123,7 +112,7 @@ async function main() {
     }
     console.log(`✅ ${dentistUsers.length} dentists seeded`);
 
-    // ── 4. Slots — generate for next 14 days for each dentist ─────────────
+    // ── 4. Slots — 30 days, UTC dates to avoid timezone offset bugs ────────
     const timeSlots = [
         { startTime: '09:00 AM', endTime: '09:30 AM' },
         { startTime: '09:30 AM', endTime: '10:00 AM' },
@@ -138,41 +127,32 @@ async function main() {
     ];
 
     let slotCount = 0;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const nowUtc = new Date();
+    const baseYear = nowUtc.getUTCFullYear();
+    const baseMonth = nowUtc.getUTCMonth();
+    const baseDay = nowUtc.getUTCDate();
 
     for (const dentistId of dentistIds) {
-        for (let i = 1; i <= 14; i++) {
-            const slotDate = new Date(today);
-            slotDate.setDate(today.getDate() + i);
+        for (let i = 1; i <= 30; i++) {
+            // KEY FIX: Use Date.UTC() so the stored date is always UTC midnight
+            // regardless of the machine's local timezone (e.g. IST UTC+5:30)
+            const slotDate = new Date(Date.UTC(baseYear, baseMonth, baseDay + i));
 
-            // Skip Sundays (0 = Sunday)
-            if (slotDate.getDay() === 0) continue;
+            // Skip Sundays
+            if (slotDate.getUTCDay() === 0) continue;
 
             for (const time of timeSlots) {
-                try {
-                    await prisma.slot.upsert({
-                        where: {
-                            dentistId_date_startTime: {
-                                dentistId,
-                                date: slotDate,
-                                startTime: time.startTime,
-                            },
-                        },
-                        update: {},
-                        create: {
-                            dentistId,
-                            date: slotDate,
-                            startTime: time.startTime,
-                            endTime: time.endTime,
-                            isAvailable: true,
-                            isEmergency: false,
-                        },
-                    });
-                    slotCount++;
-                } catch (e) {
-                    // Skip duplicate
-                }
+                await prisma.slot.create({
+                    data: {
+                        dentistId,
+                        date: slotDate,
+                        startTime: time.startTime,
+                        endTime: time.endTime,
+                        isAvailable: true,
+                        isEmergency: false,
+                    },
+                });
+                slotCount++;
             }
         }
     }

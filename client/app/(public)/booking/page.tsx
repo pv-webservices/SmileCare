@@ -122,20 +122,37 @@ export default function BookingPage() {
         if (!selectedTreatment || !selectedSpecialist || !selectedDate || !selectedSlot) return;
         setIsSubmitting(true);
         try {
+            const idempotencyKey = `${selectedSlot.id}-${Date.now()}`;
+
             sessionStorage.setItem(
-                "pendingBooking",
+                "smilecare_payment",   // matches payment/page.tsx line: sessionStorage.getItem("smilecare_payment")
                 JSON.stringify({
+                    orderId: `order_${Date.now()}`,
                     slotId: selectedSlot.id,
                     treatmentId: selectedTreatment.id,
-                    treatmentTitle: selectedTreatment.name,
-                    treatmentPrice: selectedTreatment.priceRange,
-                    specialistName: selectedSpecialist.name,
-                    date: selectedDate.toISOString(),
-                    startTime: selectedSlot.startTime,
                     sessionId,
-                    amount: selectedTreatment.priceRange,
+                    idempotencyKey,
+                    treatment: {
+                        id: selectedTreatment.id,
+                        title: selectedTreatment.name,
+                        price: parseInt(
+                            selectedTreatment.priceRange?.replace(/[^0-9]/g, "") || "0"
+                        ),
+                        duration: 60,
+                    },
+                    specialist: {
+                        id: selectedSpecialist.id,
+                        name: selectedSpecialist.name,
+                        specialty: selectedSpecialist.specialization,
+                    },
+                    slot: {
+                        id: selectedSlot.id,
+                        startTime: selectedSlot.startTime,
+                    },
+                    date: selectedDate.toISOString(),
                 })
             );
+
             router.push("/payment");
         } catch (err: any) {
             setError(err.message || "Failed to proceed to payment. Please try again.");
@@ -143,6 +160,7 @@ export default function BookingPage() {
             setIsSubmitting(false);
         }
     };
+
 
     // ── Error state ────────────────────────────────────────────────────────
     if (error && treatments.length === 0) {

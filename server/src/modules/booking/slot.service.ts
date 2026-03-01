@@ -30,7 +30,14 @@ export async function getAvailableSlots(
     }
 
     if (date) {
-        where.date = new Date(date);
+        // Use UTC range instead of exact match to avoid timezone offset
+        // issues on non-UTC machines (e.g. IST UTC+5:30).
+        // new Date("2026-03-05") = 2026-03-05T00:00:00.000Z (UTC midnight)
+        // but slot dates seeded with Date.UTC() are also stored at UTC midnight,
+        // so a gte/lte range of the full UTC day guarantees a match.
+        const start = new Date(`${date}T00:00:00.000Z`);
+        const end = new Date(`${date}T23:59:59.999Z`);
+        where.date = { gte: start, lte: end };
     }
 
     // Exclude slots with active (non-expired) holds
