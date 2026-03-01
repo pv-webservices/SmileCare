@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CheckCircle2, CalendarClock, Loader2, ArrowRight, Timer } from "lucide-react";
 
 interface BookingSummaryProps {
     treatment: { name: string; priceRange: string } | null;
@@ -21,7 +22,7 @@ export default function BookingSummary({
     holdExpiresAt,
     onConfirm,
     isSubmitting,
-    onHoldExpired
+    onHoldExpired,
 }: BookingSummaryProps) {
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
@@ -31,100 +32,168 @@ export default function BookingSummary({
             return;
         }
 
-        const interval = setInterval(() => {
-            const now = new Date().getTime();
+        const tick = () => {
+            const now = Date.now();
             const expires = new Date(holdExpiresAt).getTime();
             const diff = Math.max(0, Math.floor((expires - now) / 1000));
-
             setTimeLeft(diff);
-
             if (diff === 0) {
                 clearInterval(interval);
                 onHoldExpired();
             }
-        }, 1000);
+        };
 
+        tick();
+        const interval = setInterval(tick, 1000);
         return () => clearInterval(interval);
     }, [holdExpiresAt, onHoldExpired]);
 
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    const formatCountdown = (seconds: number) => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s.toString().padStart(2, "0")}`;
     };
 
-    const parsedPrice = treatment?.priceRange ? parseInt(treatment.priceRange.replace(/\D/g, '')) : 0;
-    const subtotal = parsedPrice || 0;
-    const credit = subtotal > 0 ? 50 : 0; // Concierge credit demo
-    const total = Math.max(0, subtotal - credit);
+    // Parse price from priceRange string — e.g. "₹12,000" or "12000"
+    const parsedPrice =
+        treatment?.priceRange
+            ? parseInt(treatment.priceRange.replace(/[^0-9]/g, ""), 10) || 0
+            : 0;
+
+    const canConfirm =
+        !!treatment && !!specialist && !!date && !!slot && !isSubmitting;
 
     return (
-        <div className="sticky top-28 h-fit animate-in fade-in slide-in-from-right-4 duration-1000">
+        <div className="sticky top-28 h-fit">
             <div className="rounded-[2rem] bg-white p-8 shadow-2xl shadow-primary/5 border border-slate-50 flex flex-col gap-8">
-                <h3 className="text-xl font-display font-bold text-slate-900 border-b border-slate-50 pb-4">Booking Summary</h3>
+                <h3 className="text-xl font-display font-bold text-slate-900 border-b border-slate-100 pb-4">
+                    Booking Summary
+                </h3>
 
-                <div className="space-y-6">
+                {/* Hold countdown */}
+                {holdExpiresAt && timeLeft !== null && (
+                    <div
+                        className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold ${timeLeft < 60
+                                ? "bg-red-50 text-red-600"
+                                : "bg-amber-50 text-amber-700"
+                            }`}
+                    >
+                        <Timer size={16} className="shrink-0" />
+                        <span>
+                            Slot held for{" "}
+                            <span className="tabular-nums">
+                                {formatCountdown(timeLeft)}
+                            </span>
+                        </span>
+                    </div>
+                )}
+
+                {/* Summary rows */}
+                <div className="space-y-5">
+                    {/* Service */}
                     <div className="flex justify-between items-start">
                         <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">Service</p>
-                            <p className="font-bold text-slate-700 text-sm">{treatment ? treatment.name : "Not selected"}</p>
+                            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">
+                                Service
+                            </p>
+                            <p className="font-bold text-slate-700 text-sm">
+                                {treatment ? treatment.name : "Not selected"}
+                            </p>
                         </div>
-                        <p className="font-bold text-slate-900 text-sm">{treatment ? treatment.priceRange : "—"}</p>
+                        {treatment && (
+                            <p className="font-bold text-slate-900 text-sm">
+                                {treatment.priceRange}
+                            </p>
+                        )}
                     </div>
 
+                    {/* Provider */}
                     <div className="flex justify-between items-start">
                         <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">Provider</p>
-                            <p className="font-bold text-slate-700 text-sm">{specialist ? specialist.name : "Not selected"}</p>
+                            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">
+                                Provider
+                            </p>
+                            <p className="font-bold text-slate-700 text-sm">
+                                {specialist ? specialist.name : "Not selected"}
+                            </p>
                         </div>
-                        {specialist && <span className="material-symbols-outlined text-primary text-lg">check_circle</span>}
+                        {specialist && (
+                            <CheckCircle2 size={18} className="text-primary shrink-0" />
+                        )}
                     </div>
 
+                    {/* Date & Time */}
                     <div className="flex justify-between items-start">
                         <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">Date & Time</p>
+                            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">
+                                Date & Time
+                            </p>
                             <p className="font-bold text-slate-700 text-sm">
                                 {date && slot
-                                    ? `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${slot.startTime}`
+                                    ? `${date.toLocaleDateString("en-IN", {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                    })} • ${slot.startTime}`
                                     : "Not selected"}
                             </p>
                         </div>
-                        {date && slot && <span className="material-symbols-outlined text-primary text-lg">calendar_month</span>}
+                        {date && slot && (
+                            <CalendarClock size={18} className="text-primary shrink-0" />
+                        )}
                     </div>
                 </div>
 
-                <div className="bg-[#F8FAFC] rounded-2xl p-6 space-y-4">
+                {/* Price breakdown */}
+                <div className="bg-slate-50 rounded-2xl p-6 space-y-3">
                     <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-widest">
                         <span>Subtotal</span>
-                        <span>${subtotal.toFixed(2)}</span>
+                        <span>
+                            {parsedPrice > 0
+                                ? `₹${parsedPrice.toLocaleString("en-IN")}`
+                                : "—"}
+                        </span>
                     </div>
-                    {credit > 0 && (
-                        <div className="flex justify-between items-center text-xs font-bold text-green-600 uppercase tracking-widest">
-                            <span>Concierge Credit Applied</span>
-                            <span>-$50.00</span>
-                        </div>
-                    )}
-                    <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
-                        <span className="font-display font-bold text-2xl text-slate-900">Total</span>
-                        <span className="font-display text-4xl font-black text-primary">${total.toFixed(2)}</span>
+                    <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
+                        <span className="font-display font-bold text-xl text-slate-900">
+                            Total
+                        </span>
+                        <span className="font-display text-3xl font-black text-primary">
+                            {parsedPrice > 0
+                                ? `₹${parsedPrice.toLocaleString("en-IN")}`
+                                : "—"}
+                        </span>
                     </div>
                 </div>
 
+                {/* CTA */}
                 <button
                     onClick={onConfirm}
-                    disabled={!treatment || !specialist || !date || !slot || isSubmitting}
-                    className={`w-full py-5 rounded-2xl font-bold text-lg transition-all duration-300 shadow-xl flex items-center justify-center gap-2 ${!treatment || !specialist || !date || !slot || isSubmitting
-                        ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none"
-                        : "bg-primary text-white hover:bg-primary/95 shadow-primary/20 active:scale-[0.98]"
+                    disabled={!canConfirm}
+                    className={`w-full py-4 rounded-2xl font-bold text-base transition-all duration-300 shadow-xl flex items-center justify-center gap-2 ${!canConfirm
+                            ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none"
+                            : "bg-primary text-white hover:opacity-90 shadow-primary/20 active:scale-[0.98]"
                         }`}
                 >
-                    {isSubmitting ? "Redirecting to Payment..." : (
-                        <>Proceed to Payment <span className="text-xl">→</span></>
+                    {isSubmitting ? (
+                        <>
+                            <Loader2 size={18} className="animate-spin" />
+                            Redirecting to Payment...
+                        </>
+                    ) : (
+                        <>
+                            Proceed to Payment
+                            <ArrowRight size={18} />
+                        </>
                     )}
                 </button>
 
                 <p className="text-center text-[10px] text-slate-400 font-medium leading-relaxed">
-                    By confirming, you agree to our <a href="#" className="underline">Cancellation Policy</a> and elite clinical standards.
+                    By confirming, you agree to our{" "}
+                    <a href="#" className="underline">
+                        Cancellation Policy
+                    </a>{" "}
+                    and elite clinical standards.
                 </p>
             </div>
         </div>

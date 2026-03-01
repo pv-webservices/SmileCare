@@ -1,3 +1,5 @@
+import { Scan, Wrench, CheckCircle2, type LucideIcon } from "lucide-react";
+
 interface ProcessStep {
     title: string;
     description: string;
@@ -7,34 +9,55 @@ interface TreatmentProcessProps {
     steps: ProcessStep[];
 }
 
-const TreatmentProcess = ({ steps }: TreatmentProcessProps) => {
-    const icons = ["calendar_month", "precision_manufacturing", "verified"];
+// Cycle through these 3 icons for up to 3 steps
+const STEP_ICONS: LucideIcon[] = [Scan, Wrench, CheckCircle2];
 
+const TreatmentProcess = ({ steps }: TreatmentProcessProps) => {
     return (
-        <section className="py-24 bg-white dark:bg-background-dark">
+        <section className="py-24 bg-white">
             <div className="max-w-7xl mx-auto px-6">
-                <div className="text-center mb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <h2 className="text-3xl md:text-5xl font-display font-bold text-slate-900 dark:text-slate-50 mb-6">
-                        The Smile Design Journey
+                {/* Header */}
+                <div className="text-center mb-20">
+                    <p className="text-xs font-bold uppercase tracking-[0.25em] text-primary mb-3">
+                        Your Journey
+                    </p>
+                    <h2 className="text-3xl md:text-5xl font-display font-bold text-slate-900 mb-6">
+                        The Treatment Process
                     </h2>
                     <div className="h-1.5 w-24 bg-primary mx-auto rounded-full shadow-sm shadow-primary/20" />
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-12 lg:gap-16">
-                    {steps.map((step, index) => (
-                        <div key={index} className="relative group flex flex-col items-center md:items-start text-center md:text-left">
-                            <div className="size-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-8 group-hover:bg-primary group-hover:text-white transition-all duration-300 shadow-lg shadow-primary/5">
-                                <span className="material-symbols-outlined text-3xl">{icons[index % icons.length]}</span>
+                {/* Steps */}
+                <div className="grid md:grid-cols-3 gap-12 lg:gap-16 relative">
+                    {/* Connector line (desktop only) */}
+                    <div className="hidden md:block absolute top-8 left-[16.66%] right-[16.66%] h-px bg-primary/10 z-0" />
+
+                    {steps.map((step, index) => {
+                        const Icon = STEP_ICONS[index % STEP_ICONS.length];
+                        return (
+                            <div
+                                key={index}
+                                className="relative group flex flex-col items-center md:items-start text-center md:text-left z-10"
+                            >
+                                {/* Icon circle */}
+                                <div className="size-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-8 group-hover:bg-primary group-hover:text-white transition-all duration-300 shadow-lg shadow-primary/5 shrink-0">
+                                    <Icon size={28} />
+                                </div>
+
+                                {/* Step number + title */}
+                                <h3 className="text-2xl font-display font-bold mb-4 text-slate-900 tracking-tight">
+                                    <span className="text-primary/40 mr-2 text-xl font-body">
+                                        0{index + 1}
+                                    </span>
+                                    {step.title}
+                                </h3>
+
+                                <p className="text-slate-600 leading-relaxed">
+                                    {step.description}
+                                </p>
                             </div>
-                            <h3 className="text-2xl font-display font-bold mb-4 text-slate-900 dark:text-slate-50 tracking-tight">
-                                <span className="text-primary/40 mr-2 text-xl font-body">0{index + 1}</span>
-                                {step.title}
-                            </h3>
-                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                                {step.description}
-                            </p>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </section>

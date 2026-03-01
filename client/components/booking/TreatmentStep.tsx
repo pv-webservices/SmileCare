@@ -1,6 +1,18 @@
 "use client";
 
+import { Stethoscope, CheckCircle2 } from "lucide-react";
 import { Treatment } from "@/lib/booking.api";
+
+/**
+ * Normalise any price string to INR display format.
+ * "$299" → "₹299"   "₹299" → "₹299"   "299" → "₹299"
+ * "From $500" → "From ₹500"
+ */
+function toINR(priceRange: string): string {
+    if (!priceRange) return "";
+    // Replace any currency symbol ($ £ € etc.) with ₹
+    return priceRange.replace(/[$£€]/g, "₹");
+}
 
 interface TreatmentStepProps {
     treatments: Treatment[];
@@ -12,11 +24,28 @@ interface TreatmentStepProps {
 export default function TreatmentStep({ treatments, selectedId, onSelect, isLoading }: TreatmentStepProps) {
     if (isLoading) {
         return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 animate-pulse">
-                {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-44 bg-slate-50 rounded-2xl" />
-                ))}
-            </div>
+            <section>
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="h-8 w-8 rounded-full bg-slate-100 animate-pulse" />
+                    <div className="h-7 w-44 bg-slate-100 rounded-lg animate-pulse" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div
+                            key={i}
+                            className="rounded-2xl border-2 border-slate-100 bg-white p-6 space-y-4 animate-pulse"
+                        >
+                            <div className="h-8 w-8 bg-slate-100 rounded-lg" />
+                            <div className="h-5 w-3/4 bg-slate-100 rounded-md" />
+                            <div className="space-y-2">
+                                <div className="h-3 w-full bg-slate-50 rounded" />
+                                <div className="h-3 w-2/3 bg-slate-50 rounded" />
+                            </div>
+                            <div className="h-4 w-16 bg-slate-100 rounded-md" />
+                        </div>
+                    ))}
+                </div>
+            </section>
         );
     }
 
@@ -41,12 +70,13 @@ export default function TreatmentStep({ treatments, selectedId, onSelect, isLoad
                                 }`}
                         >
                             <div className="flex justify-between items-start mb-4">
-                                <span className={`material-symbols-outlined text-3xl ${isSelected ? "text-primary" : "text-slate-400 group-hover:text-primary"} transition-colors`}>
-                                    {"medical_services"}
-                                </span>
+                                <Stethoscope
+                                    size={28}
+                                    className={isSelected ? "text-primary" : "text-slate-400 group-hover:text-primary transition-colors"}
+                                />
                                 {isSelected && (
                                     <div className="bg-primary text-white size-6 rounded-full flex items-center justify-center shadow-lg shadow-primary/20">
-                                        <span className="material-symbols-outlined text-xs">check</span>
+                                        <CheckCircle2 size={14} />
                                     </div>
                                 )}
                             </div>
@@ -57,7 +87,7 @@ export default function TreatmentStep({ treatments, selectedId, onSelect, isLoad
                             </p>
 
                             <p className="text-primary font-bold text-sm tracking-tight">
-                                {treatment.priceRange}
+                                {toINR(treatment.priceRange)}
                             </p>
                         </div>
                     );

@@ -1,3 +1,8 @@
+"use client";
+
+import { useState } from "react";
+import { ChevronDown, HelpCircle } from "lucide-react";
+
 interface FAQItem {
     question: string;
     answer: string;
@@ -8,34 +13,71 @@ interface TreatmentFAQProps {
 }
 
 const TreatmentFAQ = ({ faqs }: TreatmentFAQProps) => {
+    const [openIndex, setOpenIndex] = useState<number>(0);
+
     return (
-        <section className="py-24 bg-white dark:bg-background-dark">
+        <section className="py-24 bg-white">
             <div className="max-w-4xl mx-auto px-6">
+                {/* Header */}
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl font-display font-bold text-slate-900 dark:text-slate-50 mb-4">
+                    <div className="inline-flex items-center justify-center size-14 bg-primary/10 rounded-2xl mb-5">
+                        <HelpCircle size={28} className="text-primary" />
+                    </div>
+                    <h2 className="text-4xl font-display font-bold text-slate-900 mb-4">
                         Common Questions
                     </h2>
-                    <p className="text-slate-500 font-medium">Everything you need to know about the procedure</p>
+                    <p className="text-slate-500 font-medium">
+                        Everything you need to know about the procedure
+                    </p>
                 </div>
 
-                <div className="space-y-4">
-                    {faqs.map((faq, index) => (
-                        <details
-                            key={index}
-                            className="group border border-slate-200 dark:border-slate-800 rounded-[1.5rem] overflow-hidden transition-all duration-300 open:shadow-xl open:border-primary/20"
-                            open={index === 0}
-                        >
-                            <summary className="flex justify-between items-center p-8 cursor-pointer bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors list-none">
-                                <span className="font-bold text-lg text-slate-900 dark:text-slate-50 pr-8">{faq.question}</span>
-                                <div className="size-10 rounded-full bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center group-open:rotate-180 transition-transform duration-500">
-                                    <span className="material-symbols-outlined text-primary">expand_more</span>
+                {/* Accordion */}
+                <div className="space-y-3">
+                    {faqs.map((faq, index) => {
+                        const isOpen = openIndex === index;
+                        return (
+                            <div
+                                key={index}
+                                className={`rounded-2xl border overflow-hidden transition-all duration-300 ${isOpen
+                                        ? "border-primary/20 shadow-lg shadow-primary/5"
+                                        : "border-slate-200 shadow-sm"
+                                    }`}
+                            >
+                                {/* Question */}
+                                <button
+                                    onClick={() =>
+                                        setOpenIndex(isOpen ? -1 : index)
+                                    }
+                                    className="w-full flex justify-between items-center p-6 sm:p-8 text-left bg-white hover:bg-slate-50/60 transition-colors"
+                                    aria-expanded={isOpen}
+                                >
+                                    <span className="font-bold text-base sm:text-lg text-slate-900 pr-6 leading-snug">
+                                        {faq.question}
+                                    </span>
+                                    <div
+                                        className={`size-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${isOpen
+                                                ? "bg-primary text-white rotate-180"
+                                                : "bg-slate-100 text-slate-500"
+                                            }`}
+                                    >
+                                        <ChevronDown size={18} />
+                                    </div>
+                                </button>
+
+                                {/* Answer */}
+                                <div
+                                    className={`overflow-hidden transition-all duration-300 ${isOpen
+                                            ? "max-h-96 opacity-100"
+                                            : "max-h-0 opacity-0"
+                                        }`}
+                                >
+                                    <p className="px-6 sm:px-8 pb-6 sm:pb-8 text-slate-600 leading-relaxed text-base border-t border-slate-100 pt-5">
+                                        {faq.answer}
+                                    </p>
                                 </div>
-                            </summary>
-                            <div className="p-8 text-slate-600 dark:text-slate-400 leading-relaxed text-lg border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark animate-in fade-in slide-in-from-top-2 duration-300">
-                                {faq.answer}
                             </div>
-                        </details>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </section>

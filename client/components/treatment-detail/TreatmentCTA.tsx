@@ -44,10 +44,10 @@ const TreatmentCTA = ({ title }: TreatmentCTAProps) => {
                                     Book Consultation
                                 </Link>
                                 <Link
-                                    href="/gallery"
+                                    href="/treatments"
                                     className="bg-transparent border-2 border-white/20 hover:border-white text-white px-8 py-4 rounded-xl font-bold text-lg transition-all inline-block text-center"
                                 >
-                                    View Smile Gallery
+                                    Explore All Treatments
                                 </Link>
                             </div>
                         </div>

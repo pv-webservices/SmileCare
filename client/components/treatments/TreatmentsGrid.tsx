@@ -5,81 +5,16 @@ import TreatmentsSearch from "./TreatmentsSearch";
 import TreatmentsFilterBar from "./TreatmentsFilterBar";
 import TreatmentCard from "./TreatmentCard";
 import type { Treatment } from "./TreatmentCard";
+import { TREATMENTS } from "@/lib/treatments-data";
 
-const treatments: Treatment[] = [
-    {
-        id: 1,
-        title: "Invisalign Clear Aligners",
-        slug: "invisalign-clear-aligners",
-        category: "Orthodontics",
-        description:
-            "Straighten your teeth discreetly without metal braces. Our digital planning ensures a precise, comfortable, and fast transformation of your smile.",
-        image: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=800",
-    },
-    {
-        id: 2,
-        title: "Laser Teeth Whitening",
-        slug: "laser-teeth-whitening",
-        category: "Cosmetic",
-        description:
-            "Achieve professional results in just one visit. Our advanced laser technology removes deep stains while protecting your enamel and gums.",
-        image: "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=800",
-    },
-    {
-        id: 3,
-        title: "Permanent Dental Implants",
-        slug: "permanent-dental-implants",
-        category: "Restorative",
-        description:
-            "The gold standard for replacing missing teeth. Our implants look, feel, and function exactly like natural teeth, restoring your confidence.",
-        image: "https://images.unsplash.com/photo-1598256989800-fe5f95da9787?auto=format&fit=crop&q=80&w=800",
-    },
-    {
-        id: 4,
-        title: "Porcelain Veneers",
-        slug: "porcelain-veneers",
-        category: "Cosmetic",
-        description:
-            "Ultra-thin, custom-made shells that cover the front surface of teeth to improve appearance with natural-looking, lasting results.",
-        image: "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?auto=format&fit=crop&q=80&w=800",
-    },
-    {
-        id: 5,
-        title: "Dental Crowns & Bridges",
-        slug: "dental-crowns-bridges",
-        category: "Restorative",
-        description:
-            "Restore damaged or missing teeth with precision-crafted crowns and bridges that blend seamlessly with your natural smile.",
-        image: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=800",
-    },
-    {
-        id: 6,
-        title: "Complete Oral Health Check",
-        slug: "complete-oral-health-check",
-        category: "Preventative",
-        description:
-            "Comprehensive examination including digital X-rays, gum health assessment, oral cancer screening, and a personalized care plan.",
-        image: "https://images.unsplash.com/photo-1588776813677-77aaf5595b83?auto=format&fit=crop&q=80&w=800",
-    },
-    {
-        id: 7,
-        title: "Ceramic Braces",
-        slug: "ceramic-braces",
-        category: "Orthodontics",
-        description:
-            "Tooth-coloured brackets that blend naturally with your teeth while delivering the same powerful alignment correction as traditional braces.",
-        image: "https://images.unsplash.com/photo-1571772996211-2f02974a235a?auto=format&fit=crop&q=80&w=800",
-    },
-    {
-        id: 8,
-        title: "Deep Cleaning & Scaling",
-        slug: "deep-cleaning-scaling",
-        category: "Preventative",
-        description:
-            "Professional deep cleaning to remove plaque and tartar buildup below the gumline, preventing gum disease and maintaining oral health.",
-        image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800",
-    },
-];
+const treatments: Treatment[] = TREATMENTS.map((t) => ({
+    id: t.id,
+    title: t.title,
+    slug: t.slug,
+    category: t.category,
+    description: t.description,
+    image: t.image,
+}));
 
 const TreatmentsGrid = () => {
     const [searchQuery, setSearchQuery] = useState("");

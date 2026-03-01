@@ -20,6 +20,13 @@ import {
 } from "@/lib/booking.api";
 import { useToast } from "@/context/ToastContext";
 
+export interface PatientDetails {
+    name: string;
+    phone: string;
+    email: string;
+    notes: string;
+}
+
 // ── State Shape ────────────────────────────────────────────────────────────
 
 interface BookingState {
@@ -44,6 +51,7 @@ interface BookingState {
     selectedDate: Date | null;
     selectedSlot: Slot | null;
     holdExpiresAt: Date | null;
+    patientDetails: PatientDetails | null;
 
     // Session
     sessionId: string;
@@ -57,6 +65,7 @@ interface BookingState {
     selectSpecialist: (specialist: Specialist) => void;
     selectDate: (date: Date) => void;
     selectSlot: (slot: Slot) => Promise<void>;
+    selectPatientDetails: (details: PatientDetails) => void;
     handleHoldExpired: () => void;
     handleConfirm: () => Promise<void>;
     resetBooking: () => void;
@@ -89,6 +98,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     const [selectedSpecialist, setSelectedSpecialist] = useState<Specialist | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+    const [patientDetails, setPatientDetails] = useState<PatientDetails | null>(null);
     const [holdExpiresAt, setHoldExpiresAt] = useState<Date | null>(null);
 
     // Session ID — stable per page load
@@ -129,28 +139,40 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!selectedSpecialist || !selectedDate) {
             setSlots([]);
+            setIsLoadingSlots(false);
             return;
         }
 
-        const fetchSlots = async () => {
-            setIsLoadingSlots(true);
-            setSlotsError(null);
-            setSlots([]);
+        // Show loading immediately for responsive feel
+        setIsLoadingSlots(true);
+        setSlotsError(null);
+
+        // Debounce: wait 300ms before firing the API call
+        // so rapid date clicks don't hammer the server
+        const timer = setTimeout(async () => {
             try {
-                const dateStr = selectedDate.toISOString().split("T")[0];
+                const y = selectedDate.getFullYear();
+                const mo = String(selectedDate.getMonth() + 1).padStart(2, "0");
+                const dy = String(selectedDate.getDate()).padStart(2, "0");
+                const dateStr = `${y}-${mo}-${dy}`;
+
                 const data = await getSlots(selectedSpecialist.id, dateStr);
                 setSlots(data);
             } catch (err: any) {
+                // Ignore abort errors from stale requests
+                if ((err as Error).name === "AbortError") return;
                 const msg = err.message || "Failed to load available slots.";
                 setSlotsError(msg);
                 toastError("Could Not Load Slots", msg);
             } finally {
                 setIsLoadingSlots(false);
             }
-        };
+        }, 300);
 
-        fetchSlots();
-    }, [selectedSpecialist, selectedDate]);
+        // Cleanup: cancel the pending fetch if date changes again
+        return () => clearTimeout(timer);
+
+    }, [selectedSpecialist, selectedDate, toastError]);
 
     // ── Actions ───────────────────────────────────────────────────────────
 
@@ -223,6 +245,12 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         [sessionId, toastError, warning]
     );
 
+    const selectPatientDetails = useCallback((details: PatientDetails) => {
+        setPatientDetails(details);
+        setStep(5);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }, []);
+
     const handleHoldExpired = useCallback(() => {
         setHoldExpiresAt(null);
         setSelectedSlot(null);
@@ -275,6 +303,14 @@ export function BookingProvider({ children }: { children: ReactNode }) {
                         startTime: selectedSlot.startTime,
                     },
                     date: selectedDate.toISOString(),
+                    patient: patientDetails
+                        ? {
+                            name: patientDetails.name,
+                            phone: patientDetails.phone,
+                            email: patientDetails.email,
+                            notes: patientDetails.notes,
+                        }
+                        : null,
                 })
             );
 
@@ -302,6 +338,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         setSelectedSpecialist(null);
         setSelectedDate(null);
         setSelectedSlot(null);
+        setPatientDetails(null);
         setHoldExpiresAt(null);
         setSlots([]);
         setSubmissionError(null);
@@ -325,6 +362,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
                 selectedSpecialist,
                 selectedDate,
                 selectedSlot,
+                patientDetails,
                 holdExpiresAt,
                 sessionId,
                 isSubmitting,
@@ -333,6 +371,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
                 selectSpecialist,
                 selectDate,
                 selectSlot,
+                selectPatientDetails,
                 handleHoldExpired,
                 handleConfirm,
                 resetBooking,

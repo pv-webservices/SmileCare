@@ -1,9 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { CalendarX, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Slot } from "@/lib/booking.api";
+
+/**
+ * Convert a time string like "9:00 AM", "11:30 AM", "2:00 PM"
+ * into a sortable number (total minutes from midnight).
+ */
+function timeToMinutes(timeStr: string): number {
+    const clean = timeStr.trim().toUpperCase();
+    const [timePart, period] = clean.split(" ");
+    const [hourStr, minStr] = timePart.split(":");
+    let hours = parseInt(hourStr, 10);
+    const minutes = parseInt(minStr || "0", 10);
+
+    if (period === "PM" && hours !== 12) hours += 12;
+    if (period === "AM" && hours === 12) hours = 0;
+
+    // Fallback: try 24h format if no AM/PM
+    if (!period) return hours * 60 + minutes;
+
+    return hours * 60 + minutes;
+}
 
 interface ScheduleStepProps {
     selectedDate: Date | null;
@@ -59,10 +79,10 @@ export default function ScheduleStep({
                         </h4>
                         <div className="flex gap-2">
                             <button onClick={prevMonth} className="p-1 rounded-lg hover:bg-slate-50 text-slate-400 hover:text-primary transition-colors">
-                                <span className="material-symbols-outlined text-xl">chevron_left</span>
+                                <ChevronLeft size={20} />
                             </button>
                             <button onClick={nextMonth} className="p-1 rounded-lg hover:bg-slate-50 text-slate-400 hover:text-primary transition-colors">
-                                <span className="material-symbols-outlined text-xl">chevron_right</span>
+                                <ChevronRight size={20} />
                             </button>
                         </div>
                     </div>
@@ -115,15 +135,15 @@ export default function ScheduleStep({
 
                     {!isLoadingSlots && Array.isArray(slots) && slots.length === 0 && selectedDate && (
                         <div className="py-8 text-center text-slate-400 text-sm font-medium">
-                            <span className="material-symbols-outlined text-2xl mb-2 block">event_busy</span>
-                            No available slots for this date. Please try another day.
+                            <CalendarX size={28} className="mx-auto mb-3 text-slate-300" />
+                            <p>No available slots for this date. Please try another day.</p>
                         </div>
                     )}
 
                     {!isLoadingSlots && !selectedDate && (
                         <div className="py-8 text-center text-slate-400 text-sm font-medium">
-                            <span className="material-symbols-outlined text-2xl mb-2 block">calendar_month</span>
-                            Select a date to see available slots.
+                            <CalendarDays size={28} className="mx-auto mb-3 text-slate-300" />
+                            <p>Select a date to see available slots.</p>
                         </div>
                     )}
 
@@ -133,7 +153,9 @@ export default function ScheduleStep({
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 gap-3">
-                            {(Array.isArray(slots) ? slots : []).map((slot) => (
+                            {[...(Array.isArray(slots) ? slots : [])].sort(
+                                (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
+                            ).map((slot) => (
                                 <button
                                     key={slot.id}
                                     disabled={!slot.isAvailable}
