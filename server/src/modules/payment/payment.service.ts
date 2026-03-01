@@ -4,6 +4,8 @@ import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { createBooking, BookingError } from '../booking/booking.service';
+import { sendBookingConfirmation, createNotificationRecord } from '../notification/notification.service';
+import { awardBookingPoints } from '../loyalty/loyalty.service';
 import {
     CreateOrderBody,
     VerifyPaymentBody,
@@ -176,6 +178,52 @@ export async function verifyMockPayment(
         pendingOrders.delete(orderId);
     } catch (err) {
         console.warn('[ORDER_CLEANUP_WARNING]', err);
+    }
+
+    // Only fire side-effects if we actually successfully created it this time (not idempotent hit)
+    // Wait, idempotency hits mean we already handled it, so we don't trigger emails again.
+    if (!result.isIdempotent) {
+        // Fetch full booking details for notification
+        prisma.booking.findUnique({
+            where: { id: result.booking.id },
+            include: {
+                patient: { include: { user: true } },
+                dentist: { include: { user: true } },
+                treatment: true,
+                slot: true,
+            }
+        }).then(fullBooking => {
+            if (!fullBooking) return;
+
+            // Send confirmation email (non-blocking)
+            sendBookingConfirmation({
+                toEmail: fullBooking.patient.user.email,
+                toName: fullBooking.patient.user.name,
+                treatment: fullBooking.treatment.name,
+                doctor: `Dr. ${fullBooking.dentist.user.name}`,
+                date: fullBooking.slot.date.toLocaleDateString('en-IN', {
+                    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+                }),
+                time: fullBooking.slot.startTime,
+                bookingId: fullBooking.id,
+                amount: result.payment.amount,
+            }).catch(err => console.error('Email send failed:', err));
+
+            // Save notification in DB (non-blocking)
+            createNotificationRecord(
+                fullBooking.patient.userId,
+                'booking_confirmation',
+                'Booking Confirmed',
+                `Your ${fullBooking.treatment.name} appointment is confirmed.`
+            ).catch(console.error);
+
+            // Award loyalty points (non-blocking)
+            awardBookingPoints(
+                fullBooking.patientId,
+                fullBooking.id,
+                result.payment.amount
+            ).catch(console.error);
+        }).catch(err => console.error('Failed to process payment side-effects:', err));
     }
 
     return result;
