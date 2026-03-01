@@ -7,6 +7,7 @@ import {
     patchBookingStatus,
     listUsers,
     patchDentistStatus,
+    listDentists,
 } from './admin.controller';
 
 const router = Router();
@@ -22,5 +23,7 @@ router.patch('/admin/bookings/:id/status', patchBookingStatus);
 router.get('/admin/users', listUsers);
 // PATCH /api/admin/dentists/:id/status
 router.patch('/admin/dentists/:id/status', patchDentistStatus);
+// GET  /api/admin/dentists
+router.get('/admin/dentists', listDentists);
 
 export default router;

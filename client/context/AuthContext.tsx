@@ -65,15 +65,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credentials: "include",
             body: JSON.stringify({ email, password }),
         });
+        const data = await res.json();
         if (!res.ok) {
-            const data = await res.json();
-            const msg = data.message || "Login failed";
+            const msg = data.message || data.error || "Login failed";
             toastError("Login Failed", msg);
             throw new Error(msg);
         }
         await refreshUser();
         success("Welcome back!", "You've been logged in successfully.");
-        router.push("/dashboard");
+        const role = data.role || data.user?.role;
+        router.push(role === "admin" ? "/admin" : "/dashboard");
     };
 
     const register = async (name: string, email: string, phone: string, password: string) => {

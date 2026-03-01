@@ -5,6 +5,7 @@ import {
     updateBookingStatus,
     getAllUsers,
     toggleDentistStatus,
+    getAllDentists,
 } from './admin.service';
 
 // Middleware: admin-only guard
@@ -67,6 +68,15 @@ export async function patchDentistStatus(req: Request, res: Response): Promise<v
         const { isActive } = req.body;
         const dentist = await toggleDentistStatus(id, isActive);
         res.json({ success: true, data: dentist });
+    } catch (err: any) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+}
+
+export async function listDentists(req: Request, res: Response): Promise<void> {
+    try {
+        const dentists = await getAllDentists();
+        res.json({ success: true, data: dentists });
     } catch (err: any) {
         res.status(500).json({ success: false, error: err.message });
     }

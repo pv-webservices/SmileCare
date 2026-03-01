@@ -110,3 +110,12 @@ export async function toggleDentistStatus(
         data: { isActive },
     });
 }
+
+export async function getAllDentists() {
+    return prisma.dentist.findMany({
+        include: {
+            user: { select: { id: true, name: true, email: true } },
+        },
+        orderBy: { createdAt: 'asc' },
+    });
+}
