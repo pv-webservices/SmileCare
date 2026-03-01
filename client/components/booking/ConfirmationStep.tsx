@@ -112,8 +112,8 @@ export default function ConfirmationStep({
             {holdExpiresAt && timeLeft !== null && (
                 <div
                     className={`flex items-center gap-3 rounded-xl px-4 py-3 mb-6 text-sm font-bold border ${timeLeft < 60
-                            ? "bg-red-50 text-red-600 border-red-200"
-                            : "bg-amber-50 text-amber-700 border-amber-200"
+                        ? "bg-red-50 text-red-600 border-red-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
                         }`}
                 >
                     <Timer size={16} className="shrink-0" />
@@ -134,6 +134,7 @@ export default function ConfirmationStep({
                     <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100">
                         <h3 className="font-bold text-slate-900">Appointment</h3>
                         <button
+                            type="button"
                             onClick={() => onEdit(1)}
                             className="flex items-center gap-1.5 text-xs font-bold text-primary hover:opacity-75 transition-opacity"
                         >
@@ -161,6 +162,7 @@ export default function ConfirmationStep({
                     <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100">
                         <h3 className="font-bold text-slate-900">Your Details</h3>
                         <button
+                            type="button"
                             onClick={() => onEdit(4)}
                             className="flex items-center gap-1.5 text-xs font-bold text-primary hover:opacity-75 transition-opacity"
                         >
@@ -214,11 +216,12 @@ export default function ConfirmationStep({
 
                 {/* Confirm CTA */}
                 <button
+                    type="button"
                     onClick={onConfirm}
                     disabled={isSubmitting}
                     className={`w-full py-5 rounded-2xl font-bold text-lg transition-all duration-300 shadow-xl flex items-center justify-center gap-3 ${isSubmitting
-                            ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none"
-                            : "bg-primary text-white hover:opacity-90 shadow-primary/20 active:scale-[0.98]"
+                        ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none"
+                        : "bg-primary text-white hover:opacity-90 shadow-primary/20 active:scale-[0.98]"
                         }`}
                 >
                     {isSubmitting ? (

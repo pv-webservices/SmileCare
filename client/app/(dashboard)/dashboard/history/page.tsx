@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { History, FileDown, Loader2 } from "lucide-react";
 import { getLocalHistoryBookings, getLocalBookings } from "@/lib/booking-storage";
+import { HistoryRowSkeleton } from "@/components/ui/Skeleton";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -24,7 +25,13 @@ function formatCurrency(amt: number | null) {
 }
 
 export default function HistoryPage() {
-    const [history, setHistory] = useState<any[]>(mockHistory);
+    const [history, setHistory] = useState<any[]>(
+        () => {
+            if (typeof window === "undefined") return mockHistory;
+            const local = getLocalBookings(); // all bookings as history fallback
+            return local.length > 0 ? local : mockHistory;
+        }
+    );
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -47,7 +54,10 @@ export default function HistoryPage() {
                         setHistory(mockHistory);
                     }
                 } else {
-                    setHistory(localHistory.length > 0 ? localHistory : mockHistory);
+                    // Show all local bookings as history when server is unavailable
+                    // Only fall back to mock if user has genuinely never booked
+                    const allLocal = getLocalBookings();
+                    setHistory(allLocal.length > 0 ? allLocal : mockHistory);
                 }
             } catch { /* mock fallback */ }
             setLoading(false);
@@ -74,8 +84,26 @@ export default function HistoryPage() {
             </header>
 
             {loading ? (
-                <div className="flex items-center justify-center h-96">
-                    <Loader2 size={32} className="animate-spin text-primary" />
+                <div className="p-8 max-w-5xl mx-auto">
+                    <div className="bg-white rounded-2xl border border-primary/5 overflow-hidden">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-primary/5">
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest">Date</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest">Treatment</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest text-center">Status</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest text-center">Payment</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest text-right">Invoice</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-primary/5">
+                                <HistoryRowSkeleton />
+                                <HistoryRowSkeleton />
+                                <HistoryRowSkeleton />
+                                <HistoryRowSkeleton />
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             ) : (
                 <div className="p-8 max-w-5xl mx-auto">

@@ -16,8 +16,10 @@ import {
 import {
     getLocalUpcomingBookings,
     getLocalHistoryBookings,
+    updateLocalBookingStatus,
     type LocalBooking,
 } from "@/lib/booking-storage";
+import { BookingCardSkeleton } from "@/components/ui/Skeleton";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -159,8 +161,17 @@ function BookingCard({ booking, onCancel }: {
 
 export default function BookingsPage() {
     const [tab, setTab] = useState<Tab>("upcoming");
-    const [upcoming, setUpcoming] = useState<AnyBooking[]>([]);
-    const [history, setHistory] = useState<AnyBooking[]>([]);
+    // Initialize synchronously from localStorage to avoid empty flash
+    const [upcoming, setUpcoming] = useState<AnyBooking[]>(
+        () => (typeof window !== "undefined"
+            ? (getLocalUpcomingBookings() as AnyBooking[])
+            : [])
+    );
+    const [history, setHistory] = useState<AnyBooking[]>(
+        () => (typeof window !== "undefined"
+            ? (getLocalHistoryBookings() as AnyBooking[])
+            : [])
+    );
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -201,6 +212,8 @@ export default function BookingsPage() {
                 credentials: "include",
             }).catch(() => null);
         } catch { /* silent */ }
+        // Persist cancellation in localStorage
+        updateLocalBookingStatus(id, "cancelled");
         setUpcoming((prev) => prev.filter((a) => a.id !== id));
     };
 
@@ -217,9 +230,11 @@ export default function BookingsPage() {
                 </p>
             </header>
 
-            {loading ? (
-                <div className="flex items-center justify-center h-96">
-                    <Loader2 size={32} className="animate-spin text-primary" />
+            {loading && upcoming.length === 0 && history.length === 0 ? (
+                <div className="p-8 max-w-4xl mx-auto space-y-4">
+                    <BookingCardSkeleton />
+                    <BookingCardSkeleton />
+                    <BookingCardSkeleton />
                 </div>
             ) : (
                 <div className="p-8 max-w-4xl mx-auto">
@@ -231,8 +246,8 @@ export default function BookingsPage() {
                                 key={t}
                                 onClick={() => setTab(t)}
                                 className={`px-6 py-2.5 rounded-lg text-sm font-bold capitalize transition-all ${tab === t
-                                        ? "bg-primary text-white shadow-sm"
-                                        : "text-primary/40 hover:text-primary/60"
+                                    ? "bg-primary text-white shadow-sm"
+                                    : "text-primary/40 hover:text-primary/60"
                                     }`}
                             >
                                 {t === "upcoming" ? "Upcoming" : "Past"}

@@ -70,8 +70,20 @@ function formatDate(d: string) {
 export default function DashboardPage() {
     const { user } = useAuth();
     const [profile, setProfile] = useState<any>(mockProfile);
-    const [upcoming, setUpcoming] = useState<any[]>(mockUpcoming);
-    const [history, setHistory] = useState<any[]>(mockHistory);
+    const [upcoming, setUpcoming] = useState<any[]>(
+        () => {
+            if (typeof window === "undefined") return mockUpcoming;
+            const local = getLocalUpcomingBookings();
+            return local.length > 0 ? local : mockUpcoming;
+        }
+    );
+    const [history, setHistory] = useState<any[]>(
+        () => {
+            if (typeof window === "undefined") return mockHistory;
+            const local = getLocalBookings().slice(0, 3);
+            return local.length > 0 ? local : mockHistory;
+        }
+    );
     const [docs, setDocs] = useState<any[]>(mockDocs);
     const [loading, setLoading] = useState(true);
 

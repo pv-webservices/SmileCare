@@ -13,48 +13,71 @@ export interface LocalBooking {
     confirmedAt: string;
 }
 
-/**
- * Returns bookings saved in sessionStorage after payment.
- * Falls back to [] if storage is unavailable (SSR).
- */
-export function getLocalBookings(): LocalBooking[] {
+const STORAGE_KEY = "smilecare_confirmed_bookings";
+
+function readStorage(): LocalBooking[] {
     if (typeof window === "undefined") return [];
     try {
-        return JSON.parse(
-            sessionStorage.getItem("smilecare_confirmed_bookings") || "[]"
-        );
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     } catch {
         return [];
     }
 }
 
-/**
- * Returns only bookings whose date is in the future (upcoming).
- */
+function writeStorage(bookings: LocalBooking[]): void {
+    if (typeof window === "undefined") return;
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
+    } catch { /* quota exceeded — silent */ }
+}
+
+/** Returns all locally saved bookings (confirmed after payment). */
+export function getLocalBookings(): LocalBooking[] {
+    return readStorage();
+}
+
+/** Returns only future bookings. */
 export function getLocalUpcomingBookings(): LocalBooking[] {
     const now = new Date();
-    return getLocalBookings().filter((b) => {
-        if (!b.date) return true; // include if date unknown
+    return readStorage().filter((b) => {
+        if (!b.date) return true;
         return new Date(b.date) >= now;
     });
 }
 
-/**
- * Returns only past bookings.
- */
+/** Returns only past bookings. */
 export function getLocalHistoryBookings(): LocalBooking[] {
     const now = new Date();
-    return getLocalBookings().filter((b) => {
+    return readStorage().filter((b) => {
         if (!b.date) return false;
         return new Date(b.date) < now;
     });
 }
 
-/**
- * Clears all local bookings (e.g. after syncing with server).
- */
+/** Appends a new booking. Prevents duplicate IDs. */
+export function addLocalBooking(booking: LocalBooking): void {
+    const existing = readStorage();
+    if (existing.find((b) => b.id === booking.id)) return; // dedupe
+    writeStorage([booking, ...existing]);
+}
+
+/** Updates status of an existing booking by ID. */
+export function updateLocalBookingStatus(
+    id: string,
+    status: LocalBooking["status"]
+): void {
+    const all = readStorage();
+    writeStorage(all.map((b) => (b.id === id ? { ...b, status } : b)));
+}
+
+/** Removes a booking by ID from local storage. */
+export function removeLocalBooking(id: string): void {
+    writeStorage(readStorage().filter((b) => b.id !== id));
+}
+
+/** Clears all local bookings (e.g., after syncing with server). */
 export function clearLocalBookings(): void {
     if (typeof window !== "undefined") {
-        sessionStorage.removeItem("smilecare_confirmed_bookings");
+        localStorage.removeItem(STORAGE_KEY);
     }
 }
