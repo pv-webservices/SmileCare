@@ -22,7 +22,7 @@ const chatLimiter = rateLimit({
 // POST /api/chatbot/message
 // Auth is OPTIONAL — works for both guests and logged-in patients
 router.post(
-    '/chatbot/message',
+    '/message',
     chatLimiter,
     handleChatMessage
 );
