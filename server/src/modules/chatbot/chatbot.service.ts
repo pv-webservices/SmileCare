@@ -102,7 +102,7 @@ async function buildClinicContext(): Promise<string> {
         .map(t => {
             const price = t.price
                 ? `₹${t.price.toLocaleString('en-IN')}`
-                : t.priceRange || 'Price on consultation';
+                : (t.priceRange ? t.priceRange.replace(/\$/g, '₹') : 'Price on consultation');
             const dur = t.duration ? `${t.duration} min` : 'varies';
             return `• ${t.name} — ${price}, ~${dur}. ${t.description.slice(0, 120)}`;
         })
@@ -183,7 +183,7 @@ function detectIntent(message: string): ChatIntent {
         return 'aftercare';
     if (/open|hours|timing|location|address|where|kahan|kab/i.test(m))
         return 'hours_location';
-    if (/human|agent|speak to|call me|talk to someone|person|real person/i.test(m))
+    if (/human|agent|speak to|call me|talk to someone|person|real person|doctor se baat|baat karna|baat krna|baat kr|kisi se baat|call karo|call karna|mujhe call|specialist se|insaan se/i.test(m))
         return 'human_handoff';
     if (/what is|what are|tell me about|explain|describe|treatment|invisalign|implant|whitening|root canal/i.test(m))
         return 'treatment_faq';
@@ -232,7 +232,10 @@ function buildSystemPrompt(
             ? 'The user is writing in Hindi or Hinglish. ' +
             'Respond naturally in Hinglish (mix of Hindi and English) ' +
             'using Roman script (not Devanagari). ' +
-            'Keep dental/medical terms in English.'
+            'Keep dental/medical terms in English. ' +
+            'IMPORTANT: Output your reply DIRECTLY. Do NOT write any reasoning, ' +
+            'thinking steps, or internal notes before your answer. ' +
+            'Start your response immediately with the actual reply to the user.'
             : 'Respond in clear, warm, professional English.';
 
     return `You are SmileCare's patient assistant — a warm, empathetic AI for a premium dental clinic in India.
@@ -261,7 +264,7 @@ STRICT RULES:
 5. If you don't know something, say "Let me connect you with our team" — never guess.
 6. Always end booking-related responses with a clear next step.
 7. Be warm and reassuring — dental anxiety is real. Acknowledge it when detected.
-8. For pricing questions, give the range from clinic data. Add "Final price confirmed at consultation."
+8. For pricing questions, give the range from clinic data using ₹ (Indian Rupees) ONLY. Never use $, USD, or any other currency symbol. Add "Final price confirmed at consultation." at the end.
 9. Do NOT mention that you are an AI model or built on any specific technology.
    You are "SmileCare's Patient Assistant" only.
 10. Loyalty points: patients earn points on every booking — mention this when relevant.
@@ -307,7 +310,18 @@ const STUBS: Record<string, string> = {
 };
 
 function stripThinkingTags(text: string): string {
-    return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    // Case 1: Properly wrapped <think>...</think> blocks
+    let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+
+    // Case 2: Model outputs reasoning without opening tag — text before orphan </think>
+    // e.g. "Okay, let me think about this... </think>\nActual reply here"
+    cleaned = cleaned.replace(/^[\s\S]*?<\/think>/i, '');
+
+    // Case 3: Opening tag with no closing tag — strip everything after <think>
+    // (model started thinking but didn't close — take nothing, return stub signal)
+    cleaned = cleaned.replace(/<think>[\s\S]*/gi, '');
+
+    return cleaned.trim();
 }
 
 // ── Main exported function ────────────────────────────────
