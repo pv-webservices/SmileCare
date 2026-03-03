@@ -282,38 +282,6 @@ export const TREATMENTS: TreatmentDetail[] = [
         ],
         relatedSlugs: ["complete-oral-health-check", "laser-teeth-whitening", "permanent-dental-implants"],
     },
-    {
-        id: 9,
-        slug: "root-canal-therapy",
-        title: "Root Canal Therapy",
-        category: "Restorative",
-        description: "Save your natural tooth and relieve pain with advanced endodontic treatment using the latest rotary technology.",
-        image: "https://images.unsplash.com/photo-1596541223130-5d56a74bb90b?auto=format&fit=crop&q=80&w=800",
-        heroImage: "https://images.unsplash.com/photo-1596541223130-5d56a74bb90b?auto=format&fit=crop&q=80&w=1600",
-        duration: "60–90 min",
-        startingPrice: 15000,
-        warranty: "5-year clinical warranty",
-        process: [
-            { title: "Diagnosis", description: "Advanced 3D imaging helps us precisely locate the infection within your tooth roots." },
-            { title: "Cleaning & Shaping", description: "The infected pulp is gently removed, and the root canals are cleaned and disinfected using rotary instruments." },
-            { title: "Sealing & Restoration", description: "The canals are sealed with a biocompatible material, and the tooth is restored with a custom crown for long-term protection." },
-        ],
-        faq: [
-            { question: "Is a root canal painful?", answer: "Modern root canal therapy is practically painless. We use effective local anesthesia and advanced techniques to ensure your complete comfort." },
-            { question: "How many visits does it take?", answer: "Most root canals can be completed in a single visit, though complex cases may require two." },
-            { question: "Will I need a crown over the tooth?", answer: "Yes, a crown is highly recommended after a root canal to protect the tooth from fracturing and restore its full strength." },
-        ],
-        qualityTitle: "Advanced Endodontic Care",
-        qualityBody: "We utilize precise rotary endodontic instruments and digital apex locators to ensure complete removal of infection and an exact seal of the root canal system.",
-        qualityBadge: "Rotary Endodontics",
-        qualityBadgeSub: "Precision Cleansing",
-        qualityFeatures: [
-            { title: "Digital Apex Locators" },
-            { title: "NiTi Rotary Instruments" },
-            { title: "Biocompatible Sealing" },
-        ],
-        relatedSlugs: ["dental-crowns-bridges", "complete-oral-health-check", "permanent-dental-implants"],
-    },
 ];
 
 /** Fast slug lookup */

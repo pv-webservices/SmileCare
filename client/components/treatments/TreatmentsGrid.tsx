@@ -65,6 +65,11 @@ const TreatmentsGrid = () => {
 
     return (
         <div className="flex flex-col">
+            {loading && (
+                <p className="text-xs text-primary/30 mb-4 animate-pulse">
+                    Loading treatments...
+                </p>
+            )}
             <div className="flex flex-col lg:flex-row lg:items-center gap-6 mb-12">
                 <div className="w-full lg:flex-1">
                     <TreatmentsSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} />

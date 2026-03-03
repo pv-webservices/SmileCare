@@ -12,11 +12,11 @@ const Footer = () => {
     ];
 
     const treatmentLinks = [
-        { label: "Invisalign", href: "/treatments/invisalign-clear-aligners" },
-        { label: "Dental Implants", href: "/treatments/permanent-dental-implants" },
-        { label: "Teeth Whitening", href: "/treatments/laser-teeth-whitening" },
-        { label: "Root Canal", href: "/treatments/root-canal-therapy" },
-        { label: "Cosmetic Dentistry", href: "/treatments/porcelain-veneers" },
+        { label: "Invisalign", href: "/treatments#invisalign" },
+        { label: "Dental Implants", href: "/treatments#implants" },
+        { label: "Teeth Whitening", href: "/treatments#whitening" },
+        { label: "Root Canal", href: "/treatments#root-canal" },
+        { label: "Cosmetic Dentistry", href: "/treatments#cosmetic" },
     ];
 
     return (
