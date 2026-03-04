@@ -1,7 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { useToast } from "@/context/ToastContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -29,10 +28,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const router = useRouter();
     const { success, error: toastError } = useToast();
 
-    const refreshUser = async (): Promise<User | null> => {
+    const refreshUser = useCallback(async (): Promise<User | null> => {
         try {
             const res = await fetch(`${API}/api/auth/me`, {
                 credentials: "include",
@@ -45,20 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(null);
                 return null;
             }
-        } catch (error: any) {
-            if (error?.status !== 401 && error?.message !== 'Unauthorized') {
-                console.error('Auth refresh error:', error);
-            }
+        } catch {
             setUser(null);
             return null;
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         refreshUser();
-    }, []);
+    }, [refreshUser]);
 
     const login = async (email: string, password: string, redirectTo?: string) => {
         const res = await fetch(`${API}/api/auth/login`, {
@@ -73,15 +68,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             toastError("Login Failed", msg);
             throw new Error(msg);
         }
-        // Refresh user to get actual role from server
+        // Get user details to determine role
         const updatedUser = await refreshUser();
         success("Welcome back!", "You've been logged in successfully.");
-        // Determine redirect destination
-        const destination = (redirectTo && redirectTo !== "/login" && redirectTo !== "/signup")
-            ? redirectTo
-            : (updatedUser?.role === "admin" ? "/admin" : "/dashboard");
-        router.replace(destination);
-        router.refresh();
+        // Determine where to redirect
+        const destination =
+            redirectTo && redirectTo !== "/login" && redirectTo !== "/signup"
+                ? redirectTo
+                : updatedUser?.role === "admin"
+                ? "/admin"
+                : "/dashboard";
+        // Use window.location for a hard redirect - this bypasses any
+        // client-side router cache issues and ensures a clean page load
+        // which is critical for cross-origin cookie-based auth
+        window.location.href = destination;
     };
 
     const register = async (name: string, email: string, phone: string, password: string) => {
@@ -107,11 +107,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }).catch(() => null);
         setUser(null);
         success("Logged Out", "You've been signed out successfully.");
-        router.push("/");
+        window.location.href = "/";
     };
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, login, register, logout, refreshUser }}>
+        <AuthContext.Provider
+            value={{ user, isLoading, isAuthenticated: !!user, login, register, logout, refreshUser }}
+        >
             {children}
         </AuthContext.Provider>
     );
