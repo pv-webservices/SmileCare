@@ -6,6 +6,8 @@ import TreatmentsFilterBar from "./TreatmentsFilterBar";
 import TreatmentCard from "./TreatmentCard";
 import type { Treatment } from "./TreatmentCard";
 import { TREATMENTS } from "@/lib/treatments-data";
+// TODO: fetch treatments from API
+
 
 const STATIC_TREATMENTS: Treatment[] = TREATMENTS.map((t) => ({
     id: t.id,

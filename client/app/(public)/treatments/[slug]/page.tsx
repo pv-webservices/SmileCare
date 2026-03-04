@@ -1,3 +1,4 @@
+// TODO: fetch treatments from API
 import { notFound } from "next/navigation";
 import { getTreatmentBySlug, getAllTreatmentSlugs } from "@/lib/treatments-data";
 import TreatmentBreadcrumb from "@/components/treatment-detail/TreatmentBreadcrumb";
