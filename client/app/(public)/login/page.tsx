@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { LogIn, Loader2, Eye, EyeOff } from "lucide-react";
 import { Suspense } from "react";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { useAuth } from "@/context/AuthContext";
 
 function LoginForm() {
-    const router = useRouter();
+    const { login } = useAuth();
     const searchParams = useSearchParams();
     const redirectTo = searchParams.get("redirect") || "/dashboard";
 
@@ -23,28 +22,14 @@ function LoginForm() {
         e.preventDefault();
         setError("");
         setLoading(true);
-
         try {
-            const res = await fetch(`${API}/api/auth/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                // Redirect to original destination (payment, dashboard, etc.)
-                router.push(redirectTo);
-            } else {
-                setError(data.message || "Invalid credentials. Please try again.");
-            }
-        } catch {
-            setError("Unable to connect to server. Please try again later.");
+            await login(email, password);
+            // login() in AuthContext handles refreshUser + router.push automatically
+        } catch (err: any) {
+            setError(err.message || "Invalid credentials. Please try again.");
+        } finally {
+            setLoading(false);
         }
-
-        setLoading(false);
     };
 
     return (
@@ -58,29 +43,27 @@ function LoginForm() {
                 </div>
 
                 {/* Title */}
-                <h1 className="font-display text-4xl text-primary text-center">Welcome Back</h1>
-                <p className="text-primary/50 text-center mt-2 font-sans">
-                    Premium dental experience awaits.
-                </p>
+                <h1 className="text-2xl font-display font-bold text-primary mb-1">Welcome Back</h1>
+                <p className="text-slate-500 text-sm mb-6">Premium dental experience awaits.</p>
 
                 {/* Context message for payment redirect */}
                 {redirectTo === "/payment" && (
-                    <div className="mt-6 p-3 bg-primary/5 border border-primary/20 rounded-xl text-primary text-sm font-medium text-center">
+                    <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-xl text-sm text-primary font-medium">
                         🔒 Please sign in to complete your payment
                     </div>
                 )}
 
                 {/* Error */}
                 {error && (
-                    <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium text-center">
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
                         {error}
                     </div>
                 )}
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
-                        <label className="block text-xs font-bold text-primary/40 uppercase tracking-wider mb-2">Email</label>
+                        <label className="block text-sm font-semibold text-primary mb-1">Email</label>
                         <input
                             type="email"
                             value={email}
@@ -92,7 +75,7 @@ function LoginForm() {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-primary/40 uppercase tracking-wider mb-2">Password</label>
+                        <label className="block text-sm font-semibold text-primary mb-1">Password</label>
                         <div className="relative">
                             <input
                                 type={showPw ? "text" : "password"}
@@ -115,7 +98,7 @@ function LoginForm() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-primary text-white rounded-xl py-3 font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
                     >
                         {loading ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
                         {loading ? "Signing in..." : "Sign In"}
@@ -123,12 +106,9 @@ function LoginForm() {
                 </form>
 
                 {/* Footer */}
-                <p className="mt-8 text-center text-sm text-primary/40 font-sans">
+                <p className="text-center text-sm text-slate-500 mt-6">
                     Don&apos;t have an account?{" "}
-                    <Link
-                        href={`/signup${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
-                        className="text-primary font-semibold hover:underline"
-                    >
+                    <Link href="/signup" className="text-primary font-semibold hover:underline">
                         Create one
                     </Link>
                 </p>
@@ -139,11 +119,7 @@ function LoginForm() {
 
 export default function LoginPage() {
     return (
-        <Suspense fallback={
-            <main className="min-h-screen flex items-center justify-center bg-background-light">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            </main>
-        }>
+        <Suspense>
             <LoginForm />
         </Suspense>
     );
