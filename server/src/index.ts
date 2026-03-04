@@ -12,9 +12,22 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(helmet());
+const allowedOrigins = [
+    'http://localhost:3000',
+    'https://smile-care-xi.vercel.app',
+    'https://smile-care-git-main-pramodkumar21011996-9042s-projects.vercel.app',
+    process.env.CLIENT_URL,
+].filter(Boolean) as string[];
+
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-    credentials: true
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error(`CORS blocked: ${origin}`));
+        }
+    },
+    credentials: true,
 }));
 app.use(express.json());
 app.use(cookieParser());

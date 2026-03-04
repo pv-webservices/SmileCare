@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { getTreatmentBySlug, getAllTreatmentSlugs, TREATMENTS } from "@/lib/treatments-data";
 
+export const dynamicParams = true;
+
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 import TreatmentBreadcrumb from "@/components/treatment-detail/TreatmentBreadcrumb";
 import TreatmentHero from "@/components/treatment-detail/TreatmentHero";
@@ -11,7 +13,17 @@ import TreatmentCTA from "@/components/treatment-detail/TreatmentCTA";
 import RelatedTreatments from "@/components/treatment-detail/RelatedTreatments";
 
 export async function generateStaticParams() {
-    return getAllTreatmentSlugs();
+    try {
+        const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${API}/api/treatments`, { cache: 'no-store' });
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+                return data.map((t: { slug: string }) => ({ slug: t.slug }));
+            }
+        }
+    } catch { }
+    return getAllTreatmentSlugs().map(({ slug }) => ({ slug }));
 }
 
 export async function generateMetadata({
