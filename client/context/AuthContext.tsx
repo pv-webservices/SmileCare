@@ -77,12 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const updatedUser = await refreshUser();
         success("Welcome back!", "You've been logged in successfully.");
         // Determine redirect destination
-        if (redirectTo && redirectTo !== "/login" && redirectTo !== "/signup") {
-            router.push(redirectTo);
-        } else {
-            const role = updatedUser?.role;
-            router.push(role === "admin" ? "/admin" : "/dashboard");
-        }
+        const destination = (redirectTo && redirectTo !== "/login" && redirectTo !== "/signup")
+            ? redirectTo
+            : (updatedUser?.role === "admin" ? "/admin" : "/dashboard");
+        router.replace(destination);
+        router.refresh();
     };
 
     const register = async (name: string, email: string, phone: string, password: string) => {

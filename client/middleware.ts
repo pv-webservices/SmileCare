@@ -1,38 +1,28 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-const PROTECTED_ROUTES = ["/dashboard", "/payment", "/booking"];
+const protectedRoutes = ["/dashboard", "/admin", "/book-appointment", "/payment", "/booking"];
+const authRoutes = ["/login", "/signup"];
 
-export function middleware(req: NextRequest) {
-    const token = req.cookies.get("accessToken");
-    const { pathname } = req.nextUrl;
+export function middleware(request: NextRequest) {
+    const { pathname } = request.nextUrl;
+    const token = request.cookies.get("accessToken")?.value;
 
-    const isProtected = PROTECTED_ROUTES.some(
-        (route) => pathname === route || pathname.startsWith(route + "/")
-    );
+    const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
+    const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
-    if (!token && isProtected) {
-        const loginUrl = new URL("/login", req.url);
+    if (isProtected && !token) {
+        const loginUrl = new URL("/login", request.url);
         loginUrl.searchParams.set("redirect", pathname);
         return NextResponse.redirect(loginUrl);
     }
 
-    // If already logged in and visiting login/signup — redirect to dashboard
-    if (token && (pathname === "/login" || pathname === "/signup")) {
-        return NextResponse.redirect(new URL("/dashboard", req.url));
+    if (isAuthRoute && token) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
     return NextResponse.next();
 }
 
 export const config = {
-    matcher: [
-        "/dashboard/:path*",
-        "/payment/:path*",
-        "/payment",
-        "/booking/:path*",
-        "/booking",
-        "/login",
-        "/signup",
-    ],
+    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|public).*)"],
 };

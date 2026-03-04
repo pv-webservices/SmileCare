@@ -25,9 +25,9 @@ function LoginForm() {
         try {
             // Pass redirectTo so AuthContext can redirect to the original page
             await login(email, password, redirectTo);
+            window.location.href = redirectTo;
         } catch (err: any) {
             setError(err.message || "Invalid credentials. Please try again.");
-        } finally {
             setLoading(false);
         }
     };
