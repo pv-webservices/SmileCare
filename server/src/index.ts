@@ -34,7 +34,7 @@ app.use(cookieParser());
 
 import rateLimit from 'express-rate-limit';
 
-// Global rate limit — catches all routes not covered by specific limiters
+// Global rate limit — catches all routes not covered by specific limiters adding to push 
 const globalLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 120,

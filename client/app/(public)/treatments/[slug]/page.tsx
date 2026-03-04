@@ -61,7 +61,7 @@ export default async function TreatmentDetailPage({
             { next: { revalidate: 300 } }
         );
         if (res.ok) apiTreatment = await res.json();
-    } catch { /* use static only */ }
+    } catch { /* use static only adding to push*/ }
 
     const treatment = {
         ...staticTreatment,
