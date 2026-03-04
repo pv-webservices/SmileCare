@@ -1,28 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const protectedRoutes = ["/dashboard", "/admin", "/book-appointment", "/payment", "/booking"];
-const authRoutes = ["/login", "/signup"];
-
+// NOTE: Middleware cannot check HttpOnly cross-origin cookies set by Render backend.
+// Auth protection is handled client-side in the dashboard layout via AuthContext.
+// This middleware is kept minimal - just passes all requests through.
 export function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl;
-    const token = request.cookies.get("accessToken")?.value;
-
-    const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
-    const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
-
-    if (isProtected && !token) {
-        const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("redirect", pathname);
-        return NextResponse.redirect(loginUrl);
-    }
-
-    if (isAuthRoute && token) {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-
     return NextResponse.next();
 }
 
 export const config = {
-    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|public).*)"],
+    matcher: [
+        // Only run on non-static routes
+        "/((?!_next/static|_next/image|favicon.ico|public).*)",
+    ],
 };
