@@ -66,7 +66,7 @@ export default async function TreatmentDetailPage({
             />
             <TreatmentFAQ faqs={treatment.faq} />
             <RelatedTreatments treatments={treatment.relatedSlugs
-                .map((s: string) => getAllTreatmentSlugs().find((t) => t.slug === s))
+                        .map((s: string) => getTreatmentBySlug(s))
                 .filter(Boolean) as any} />
             <TreatmentCTA title={treatment.title} />
         </main>
