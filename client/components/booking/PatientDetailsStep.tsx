@@ -83,7 +83,7 @@ export default function PatientDetailsStep({
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-primary mb-2">
                     Step 4 of 5
                 </p>
-                <h2 className="font-display text-3xl md:text-4xl font-black text-slate-900 mb-3">
+                <h2 className="font-display text-3xl md:text-4xl font-bold text-slate-900 mb-3">
                     Your Details
                 </h2>
                 <p className="text-slate-500 text-base leading-relaxed">
@@ -93,7 +93,7 @@ export default function PatientDetailsStep({
             </div>
 
             <form onSubmit={handleSubmit} noValidate>
-                <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-8 space-y-6">
+                <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-4 sm:p-8 space-y-6">
 
                     <div className="grid sm:grid-cols-2 gap-6">
                         {/* Full Name */}
@@ -165,7 +165,7 @@ export default function PatientDetailsStep({
                             </p>
                         )}
                         {!errors.email && (
-                            <p className="text-xs text-slate-400">
+                            <p className="text-xs text-slate-700">
                                 Booking confirmation will be sent here
                             </p>
                         )}
@@ -193,8 +193,8 @@ export default function PatientDetailsStep({
                 </div>
 
                 <div className="flex items-start gap-3 mt-5 px-1">
-                    <Info size={14} className="text-slate-400 mt-0.5 shrink-0" />
-                    <p className="text-xs text-slate-400 leading-relaxed">
+                    <Info size={14} className="text-slate-700 mt-0.5 shrink-0" />
+                    <p className="text-xs text-slate-700 leading-relaxed">
                         Your information is encrypted and used only to prepare
                         for your appointment. We never share your data.
                     </p>
@@ -203,7 +203,7 @@ export default function PatientDetailsStep({
                 <div className="mt-8 flex justify-end">
                     <button
                         type="submit"
-                        className="flex items-center gap-2.5 bg-primary text-white px-8 py-4 rounded-xl font-bold text-base shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all"
+                        className="flex items-center gap-2.5 bg-primary text-white px-4 sm:px-8 py-4 rounded-xl font-bold text-base shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all"
                     >
                         Review Booking
                         <ArrowRight size={18} />

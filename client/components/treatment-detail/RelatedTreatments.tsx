@@ -39,7 +39,7 @@ const RelatedTreatments = ({ treatments }: RelatedTreatmentsProps) => {
                 </div>
 
                 {/* Cards */}
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:p-8">
                     {treatments.slice(0, 3).map((treatment) => (
                         <Link
                             key={treatment.slug}

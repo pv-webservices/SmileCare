@@ -465,7 +465,7 @@ export default function PaymentPage() {
                     </div>
                     <h1 className="font-display text-2xl text-primary mb-2">No Booking Found</h1>
                     <p className="text-primary/40 text-sm mb-8">Please start the booking process from the booking page.</p>
-                    <Link href="/booking" className="inline-block bg-primary text-white px-8 py-3 rounded-xl font-bold hover:opacity-90 transition-all">
+                    <Link href="/booking" className="inline-block bg-primary text-white px-4 sm:px-8 py-3 rounded-xl font-bold hover:opacity-90 transition-all">
                         Go to Booking
                     </Link>
                 </div>
@@ -484,7 +484,7 @@ export default function PaymentPage() {
                     </div>
                     <h1 className="font-display text-2xl text-primary mb-2">Session Expired</h1>
                     <p className="text-primary/40 text-sm mb-8">Your payment session has timed out. Please try booking again.</p>
-                    <Link href="/booking" className="inline-block bg-primary text-white px-8 py-3 rounded-xl font-bold hover:opacity-90 transition-all">
+                    <Link href="/booking" className="inline-block bg-primary text-white px-4 sm:px-8 py-3 rounded-xl font-bold hover:opacity-90 transition-all">
                         Book Again
                     </Link>
                 </div>
@@ -605,11 +605,11 @@ export default function PaymentPage() {
     return (
         <main className="min-h-screen bg-background-light py-10 px-4">
             <div className="max-w-6xl mx-auto">
-                <div className="lg:grid lg:grid-cols-5 gap-8">
+                <div className="lg:grid lg:grid-cols-5 gap-4 sm:p-8">
 
                     {/* ─── LEFT: Payment Form ─────────────────────────── */}
                     <div className="lg:col-span-3">
-                        <div className="bg-pearl rounded-2xl shadow-xl border border-primary/10 p-8">
+                        <div className="bg-pearl rounded-2xl shadow-xl border border-primary/10 p-4 sm:p-8">
 
                             {/* Header */}
                             <div className="flex items-center justify-between mb-2">
@@ -807,7 +807,7 @@ export default function PaymentPage() {
                                                             }`}
                                                     >
                                                         <div
-                                                            className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-black"
+                                                            className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold"
                                                             style={{ backgroundColor: w.color }}
                                                         >
                                                             {w.name.slice(0, 2).toUpperCase()}
@@ -877,7 +877,7 @@ export default function PaymentPage() {
 
                     {/* ─── RIGHT: Order Summary ───────────────────────── */}
                     <div className="lg:col-span-2 mt-8 lg:mt-0">
-                        <div className="bg-pearl rounded-2xl shadow-xl border border-primary/10 p-8 sticky top-28">
+                        <div className="bg-pearl rounded-2xl shadow-xl border border-primary/10 p-4 sm:p-8 sticky top-28">
 
                             {/* Header */}
                             <div className="flex items-center gap-2 mb-6">
@@ -940,7 +940,7 @@ export default function PaymentPage() {
                                 </div>
                                 <div className="border-t border-primary/10 pt-3 flex justify-between items-baseline">
                                     <span className="text-primary font-bold">Total</span>
-                                    <span className="font-display text-3xl font-black text-primary">₹{total.toLocaleString("en-IN")}</span>
+                                    <span className="font-display text-3xl font-bold text-primary">₹{total.toLocaleString("en-IN")}</span>
                                 </div>
                             </div>
 
@@ -953,7 +953,7 @@ export default function PaymentPage() {
                             {/* Payment Logos */}
                             <div className="mt-5 flex flex-wrap items-center gap-2">
                                 {["VISA", "MC", "UPI", "NB"].map((logo) => (
-                                    <span key={logo} className="px-2.5 py-1 bg-primary/5 rounded text-[9px] font-black text-primary/30 uppercase tracking-wider">
+                                    <span key={logo} className="px-2.5 py-1 bg-primary/5 rounded text-[9px] font-bold text-primary/30 uppercase tracking-wider">
                                         {logo}
                                     </span>
                                 ))}

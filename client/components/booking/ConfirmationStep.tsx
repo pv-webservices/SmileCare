@@ -45,7 +45,7 @@ function InfoRow({
                 <Icon size={16} className="text-primary" />
             </div>
             <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                <p className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-0.5">
                     {label}
                 </p>
                 <p className="font-semibold text-slate-900 text-sm">{value}</p>
@@ -100,7 +100,7 @@ export default function ConfirmationStep({
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-primary mb-2">
                     Step 5 of 5
                 </p>
-                <h2 className="font-display text-3xl md:text-4xl font-black text-slate-900 mb-3">
+                <h2 className="font-display text-3xl md:text-4xl font-bold text-slate-900 mb-3">
                     Review Your Booking
                 </h2>
                 <p className="text-slate-500 text-base leading-relaxed">
@@ -131,7 +131,7 @@ export default function ConfirmationStep({
             <div className="space-y-5">
                 {/* Appointment card */}
                 <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm overflow-hidden">
-                    <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100">
+                    <div className="flex items-center justify-between px-4 sm:px-8 py-5 border-b border-slate-100">
                         <h3 className="font-bold text-slate-900">Appointment</h3>
                         <button
                             type="button"
@@ -141,7 +141,7 @@ export default function ConfirmationStep({
                             <Edit2 size={13} /> Edit
                         </button>
                     </div>
-                    <div className="px-8 py-6 grid sm:grid-cols-2 gap-6">
+                    <div className="px-4 sm:px-8 py-6 grid sm:grid-cols-2 gap-6">
                         <InfoRow icon={Stethoscope} label="Treatment" value={treatment?.name ?? "—"} />
                         <InfoRow
                             icon={UserRound}
@@ -159,7 +159,7 @@ export default function ConfirmationStep({
 
                 {/* Patient details card */}
                 <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm overflow-hidden">
-                    <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100">
+                    <div className="flex items-center justify-between px-4 sm:px-8 py-5 border-b border-slate-100">
                         <h3 className="font-bold text-slate-900">Your Details</h3>
                         <button
                             type="button"
@@ -169,7 +169,7 @@ export default function ConfirmationStep({
                             <Edit2 size={13} /> Edit
                         </button>
                     </div>
-                    <div className="px-8 py-6 grid sm:grid-cols-2 gap-6">
+                    <div className="px-4 sm:px-8 py-6 grid sm:grid-cols-2 gap-6">
                         <InfoRow icon={User} label="Name" value={patientDetails?.name ?? "—"} />
                         <InfoRow icon={Phone} label="Phone" value={patientDetails?.phone ?? "—"} />
                         <InfoRow icon={Mail} label="Email" value={patientDetails?.email ?? "—"} />
@@ -180,7 +180,7 @@ export default function ConfirmationStep({
                 </div>
 
                 {/* Price card */}
-                <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-8">
+                <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-4 sm:p-8">
                     <div className="flex items-center justify-between mb-4">
                         <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">
                             {treatment?.name ?? "Treatment"}
@@ -193,7 +193,7 @@ export default function ConfirmationStep({
                     </div>
                     <div className="border-t border-slate-100 pt-4 flex items-center justify-between">
                         <span className="font-display text-xl font-bold text-slate-900">Total Due</span>
-                        <span className="font-display text-4xl font-black text-primary">
+                        <span className="font-display text-4xl font-bold text-primary">
                             {parsedPrice > 0
                                 ? `₹${parsedPrice.toLocaleString("en-IN")}`
                                 : treatment?.priceRange?.replace(/[$£€]/g, "₹") ?? "—"}
@@ -237,7 +237,7 @@ export default function ConfirmationStep({
                     )}
                 </button>
 
-                <p className="text-center text-[10px] text-slate-400 font-medium leading-relaxed">
+                <p className="text-center text-[10px] text-slate-700 font-medium leading-relaxed">
                     By confirming, you agree to our{" "}
                     <a href="#" className="underline">Cancellation Policy</a>{" "}
                     and elite clinical standards.

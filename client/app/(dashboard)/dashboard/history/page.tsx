@@ -72,24 +72,24 @@ export default function HistoryPage() {
 
     return (
         <>
-            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-8 py-6">
-                <h2 className="font-display text-3xl font-black text-primary tracking-tight flex items-center gap-3">
+            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-4 sm:px-8 py-6">
+                <h2 className="font-display text-3xl font-bold text-primary tracking-tight flex items-center gap-3">
                     <History size={28} /> Treatment History
                 </h2>
-                <p className="text-primary/50 mt-1">{history.length} past visits</p>
+                <p className="text-primary/90 mt-1">{history.length} past visits</p>
             </header>
 
             {loading ? (
-                <div className="p-8 max-w-5xl mx-auto">
+                <div className="p-4 sm:p-8 max-w-5xl mx-auto">
                     <div className="bg-white rounded-2xl border border-primary/5 overflow-hidden">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-primary/5">
-                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest">Date</th>
-                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest">Treatment</th>
-                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest text-center">Status</th>
-                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest text-center">Payment</th>
-                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest text-right">Invoice</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest">Date</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest">Treatment</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest text-center">Status</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest text-center">Payment</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest text-right">Invoice</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-primary/5">
@@ -102,16 +102,16 @@ export default function HistoryPage() {
                     </div>
                 </div>
             ) : (
-                <div className="p-8 max-w-5xl mx-auto">
+                <div className="p-4 sm:p-8 max-w-5xl mx-auto">
                     <div className="bg-white rounded-2xl border border-primary/5 overflow-hidden">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-primary/5">
-                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest">Date</th>
-                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest">Treatment</th>
-                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest text-center">Status</th>
-                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest text-center">Payment</th>
-                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest text-right">Invoice</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest">Date</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest">Treatment</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest text-center">Status</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest text-center">Payment</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest text-right">Invoice</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-primary/5">
@@ -120,7 +120,7 @@ export default function HistoryPage() {
                                         <td className="px-6 py-4 text-sm font-medium text-primary/70">{formatDate(row.date)}</td>
                                         <td className="px-6 py-4">
                                             <p className="text-sm font-bold text-primary">{row.treatment}</p>
-                                            <p className="text-xs text-primary/40">{row.doctor}</p>
+                                            <p className="text-xs text-primary/90">{row.doctor}</p>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className={`inline-block px-3 py-1 text-[10px] font-bold rounded-full uppercase tracking-tighter ${statusColor(row.status)}`}>

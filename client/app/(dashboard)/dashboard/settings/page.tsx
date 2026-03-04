@@ -50,11 +50,11 @@ export default function SettingsPage() {
 
     return (
         <>
-            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-8 py-6">
-                <h2 className="font-display text-3xl font-black text-primary tracking-tight flex items-center gap-3">
+            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-4 sm:px-8 py-6">
+                <h2 className="font-display text-3xl font-bold text-primary tracking-tight flex items-center gap-3">
                     <Settings size={28} /> Account Settings
                 </h2>
-                <p className="text-primary/50 mt-1">Manage your profile information</p>
+                <p className="text-primary/90 mt-1">Manage your profile information</p>
             </header>
 
             {loading ? (
@@ -62,7 +62,7 @@ export default function SettingsPage() {
                     <Loader2 size={32} className="animate-spin text-primary" />
                 </div>
             ) : (
-                <div className="p-8 max-w-2xl mx-auto">
+                <div className="p-4 sm:p-8 max-w-2xl mx-auto">
                     {/* Success toast */}
                     {success && (
                         <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-700 animate-in fade-in">
@@ -71,12 +71,12 @@ export default function SettingsPage() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-primary/5 p-8 space-y-6">
+                    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-primary/5 p-4 sm:p-8 space-y-6">
                         <h3 className="text-lg font-bold text-primary">Personal Information</h3>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-primary/40 uppercase tracking-wider mb-2">Full Name</label>
+                                <label className="block text-xs font-bold text-primary/90 uppercase tracking-wider mb-2">Full Name</label>
                                 <input
                                     type="text"
                                     value={form.name}
@@ -87,7 +87,7 @@ export default function SettingsPage() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-primary/40 uppercase tracking-wider mb-2">Phone Number</label>
+                                <label className="block text-xs font-bold text-primary/90 uppercase tracking-wider mb-2">Phone Number</label>
                                 <input
                                     type="tel"
                                     value={form.phone}
@@ -98,7 +98,7 @@ export default function SettingsPage() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-primary/40 uppercase tracking-wider mb-2">Date of Birth</label>
+                                <label className="block text-xs font-bold text-primary/90 uppercase tracking-wider mb-2">Date of Birth</label>
                                 <input
                                     type="date"
                                     value={form.dob}
@@ -119,9 +119,9 @@ export default function SettingsPage() {
                     </form>
 
                     {/* Password Section */}
-                    <div className="bg-white rounded-2xl border border-primary/5 p-8 mt-6 space-y-4">
+                    <div className="bg-white rounded-2xl border border-primary/5 p-4 sm:p-8 mt-6 space-y-4">
                         <h3 className="text-lg font-bold text-primary">Security</h3>
-                        <p className="text-sm text-primary/50">Password changes must be done through the login flow. Use &quot;Forgot Password&quot; on the login page to reset your password.</p>
+                        <p className="text-sm text-primary/90">Password changes must be done through the login flow. Use &quot;Forgot Password&quot; on the login page to reset your password.</p>
                     </div>
                 </div>
             )}

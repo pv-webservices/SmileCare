@@ -18,6 +18,10 @@ import {
     Receipt,
     Award,
     Loader2,
+    XCircle,
+    CheckCircle2,
+    AlertTriangle,
+    RefreshCw,
 } from "lucide-react";
 import { getLocalUpcomingBookings, getLocalBookings } from "@/lib/booking-storage";
 import { useAuth } from "@/context/AuthContext";
@@ -67,6 +71,9 @@ function formatDate(d: string) {
     return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+import Modal from "@/components/ui/Modal";
+import { updateLocalBookingStatus } from "@/lib/booking-storage";
+
 export default function DashboardPage() {
     const { user } = useAuth();
     const [profile, setProfile] = useState<any>(mockProfile);
@@ -75,6 +82,11 @@ export default function DashboardPage() {
     const [docs, setDocs] = useState<any[]>(mockDocs);
     const [loading, setLoading] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
+
+    // Cancel modal state
+    const [cancelTarget, setCancelTarget] = useState<any | null>(null);
+    const [cancelling, setCancelling] = useState(false);
+    const [cancelSuccess, setCancelSuccess] = useState(false);
 
     useEffect(() => {
         const load = async () => {
@@ -126,18 +138,41 @@ export default function DashboardPage() {
         load();
     }, []);
 
+    const handleCancelConfirm = async () => {
+        if (!cancelTarget) return;
+        setCancelling(true);
+        try {
+            await fetch(`${API}/api/bookings/${cancelTarget.id}/cancel`, {
+                method: "DELETE",
+                credentials: "include",
+            }).catch(() => null);
+            updateLocalBookingStatus(cancelTarget.id, "cancelled");
+            setUpcoming((prev) =>
+                prev.filter((a) => a.id !== cancelTarget.id)
+            );
+            setCancelSuccess(true);
+            setTimeout(() => {
+                setCancelSuccess(false);
+                setCancelTarget(null);
+            }, 1800);
+        } catch {
+            setCancelling(false);
+        }
+        setCancelling(false);
+    };
+
     const first = upcoming[0];
 
     return (
         <>
             {/* Sticky Header */}
-            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-8 py-6">
+            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-4 sm:px-8 py-6">
                 <div className="flex justify-between items-end">
                     <div>
-                        <h2 className="font-display text-3xl font-black text-primary tracking-tight">
+                        <h2 className="font-display text-3xl font-bold text-primary tracking-tight">
                             Welcome back, {profile.name?.split(" ")[0] || "Alex"}
                         </h2>
-                        <p className="text-primary/50 mt-1 font-sans">
+                        <p className="text-primary/90 mt-1 font-sans">
                             Your next smile transformation is just around the corner.
                         </p>
                     </div>
@@ -147,10 +182,10 @@ export default function DashboardPage() {
                             <span className="text-xs font-bold text-primary">{profile.loyaltyPoints} pts</span>
                             <span className="text-[10px] bg-accent-gold/20 text-accent-gold px-2 py-0.5 rounded-full font-bold uppercase">{profile.membership}</span>
                         </div>
-                        <button className="size-10 flex items-center justify-center rounded-full bg-white border border-primary/10 text-primary/40 hover:text-primary transition-colors relative">
+                        <button className="size-10 flex items-center justify-center rounded-full bg-white border border-primary/10 text-primary/90 hover:text-primary transition-colors relative">
                             <Bell size={20} />
                             {unreadCount > 0 && (
-                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                                     {unreadCount > 9 ? "9+" : unreadCount}
                                 </span>
                             )}
@@ -164,7 +199,7 @@ export default function DashboardPage() {
                     <Loader2 size={32} className="animate-spin text-primary" />
                 </div>
             ) : (
-                <div className="p-8 max-w-6xl mx-auto space-y-8">
+                <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-8">
 
                     {/* Upcoming Appointment */}
                     {first && (
@@ -210,11 +245,20 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
                                     <div className="mt-6 flex flex-wrap gap-3">
-                                        <button className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all">
-                                            <CalendarPlus size={16} /> Add to Calendar
+                                        <button
+                                            onClick={() => setCancelTarget(first)}
+                                            className="flex items-center gap-2 text-red-500 bg-red-50 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors"
+                                        >
+                                            <XCircle size={16} /> Cancel
                                         </button>
-                                        <button className="flex items-center gap-2 bg-primary/5 text-primary px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/10 transition-all">
-                                            <Navigation size={16} /> Get Directions
+                                        <button
+                                            onClick={() => {
+                                                sessionStorage.setItem("smilecare_reschedule", JSON.stringify({ treatmentId: first.treatmentId || "" }));
+                                                window.location.href = "/booking";
+                                            }}
+                                            className="flex items-center gap-2 text-primary bg-primary/5 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/10 transition-colors"
+                                        >
+                                            <RefreshCw size={16} /> Reschedule
                                         </button>
                                     </div>
                                 </div>
@@ -228,7 +272,7 @@ export default function DashboardPage() {
                             <h3 className="text-lg font-bold text-primary mb-2">
                                 No Upcoming Appointments
                             </h3>
-                            <p className="text-primary/40 text-sm mb-6">
+                            <p className="text-primary/90 text-sm mb-6">
                                 Book your next visit with one of our world-class specialists.
                             </p>
                             <Link
@@ -241,7 +285,7 @@ export default function DashboardPage() {
                     )}
 
                     {/* Grid: History + Documents */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:p-8">
                         {/* Treatment History */}
                         <div className="lg:col-span-2 space-y-4">
                             <div className="flex justify-between items-center">
@@ -254,10 +298,10 @@ export default function DashboardPage() {
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="bg-primary/5">
-                                            <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest">Date</th>
-                                            <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest">Treatment</th>
-                                            <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest text-center">Status</th>
-                                            <th className="px-6 py-4 text-[11px] font-bold text-primary/40 uppercase tracking-widest text-right">Invoice</th>
+                                            <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest">Date</th>
+                                            <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest">Treatment</th>
+                                            <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest text-center">Status</th>
+                                            <th className="px-6 py-4 text-[11px] font-bold text-primary/90 uppercase tracking-widest text-right">Invoice</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-primary/5">
@@ -266,7 +310,7 @@ export default function DashboardPage() {
                                                 <td className="px-6 py-4 text-sm font-medium text-primary/70">{formatDate(row.date)}</td>
                                                 <td className="px-6 py-4">
                                                     <p className="text-sm font-bold text-primary">{row.treatment}</p>
-                                                    <p className="text-xs text-primary/40">{row.doctor}</p>
+                                                    <p className="text-xs text-primary/90">{row.doctor}</p>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
                                                     <span className={`inline-block px-3 py-1 text-[10px] font-bold rounded-full uppercase tracking-tighter ${row.status === "completed" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
@@ -301,7 +345,7 @@ export default function DashboardPage() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-bold text-primary truncate">{doc.name}</p>
-                                                <p className="text-[10px] text-primary/40">{doc.type} • {doc.size}</p>
+                                                <p className="text-[10px] text-primary/90">{doc.type} • {doc.size}</p>
                                             </div>
                                             <FileDown size={18} className="text-primary/20 group-hover:text-primary transition-colors shrink-0" />
                                         </div>
@@ -312,8 +356,8 @@ export default function DashboardPage() {
                             <div className="mt-6 p-6 bg-primary/5 rounded-2xl border border-primary/10 relative overflow-hidden">
                                 <div className="relative z-10">
                                     <h4 className="text-sm font-bold text-primary mb-1">Need help with your plan?</h4>
-                                    <p className="text-xs text-primary/50 mb-4 leading-relaxed">Our clinical advisors are available for direct messaging.</p>
-                                    <Link href="/dashboard/support" className="block w-full text-center bg-white text-primary text-[11px] font-black uppercase tracking-wider py-2.5 rounded-lg shadow-sm hover:bg-primary hover:text-white transition-colors">
+                                    <p className="text-xs text-primary/90 mb-4 leading-relaxed">Our clinical advisors are available for direct messaging.</p>
+                                    <Link href="/dashboard/support" className="block w-full text-center bg-white text-primary text-[11px] font-bold uppercase tracking-wider py-2.5 rounded-lg shadow-sm hover:bg-primary hover:text-white transition-colors">
                                         Message Care Team
                                     </Link>
                                 </div>
@@ -323,6 +367,65 @@ export default function DashboardPage() {
                     </div>
                 </div>
             )}
+
+            {/* ── Cancel Confirmation Modal ─────────────────────────────── */}
+            <Modal
+                open={!!cancelTarget}
+                onClose={() => !cancelling && setCancelTarget(null)}
+                title="Cancel Appointment"
+                description={
+                    cancelTarget
+                        ? `Are you sure you want to cancel your ${cancelTarget.treatment} appointment on ${formatDate(cancelTarget.date)} at ${cancelTarget.startTime}?`
+                        : ""
+                }
+                size="sm"
+            >
+                {cancelSuccess ? (
+                    <div className="flex flex-col items-center gap-3 py-4">
+                        <CheckCircle2 size={40} className="text-green-500" />
+                        <p className="font-bold text-slate-900">
+                            Appointment Cancelled
+                        </p>
+                        <p className="text-sm text-slate-500 text-center">
+                            Your appointment has been cancelled successfully.
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100 mb-6">
+                            <AlertTriangle
+                                size={18}
+                                className="text-amber-600 shrink-0 mt-0.5"
+                            />
+                            <p className="text-sm text-amber-700">
+                                Cancellations made less than 24 hours before the
+                                appointment may not be eligible for a refund.
+                            </p>
+                        </div>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setCancelTarget(null)}
+                                disabled={cancelling}
+                                className="px-5 py-2.5 text-sm font-bold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                            >
+                                Keep Appointment
+                            </button>
+                            <button
+                                onClick={handleCancelConfirm}
+                                disabled={cancelling}
+                                className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                            >
+                                {cancelling ? (
+                                    <Loader2 size={15} className="animate-spin" />
+                                ) : (
+                                    <XCircle size={15} />
+                                )}
+                                {cancelling ? "Cancelling..." : "Yes, Cancel"}
+                            </button>
+                        </div>
+                    </>
+                )}
+            </Modal>
         </>
     );
 }

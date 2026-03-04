@@ -10,7 +10,7 @@ export default function NotFound() {
             <div className="max-w-lg w-full text-center space-y-10">
                 {/* Large 404 */}
                 <div className="space-y-2">
-                    <p className="font-display text-[120px] font-black text-primary/10
+                    <p className="font-display text-[120px] font-bold text-primary/10
                                   leading-none select-none">
                         404
                     </p>

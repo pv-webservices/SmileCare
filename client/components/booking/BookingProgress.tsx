@@ -23,11 +23,15 @@ const STEPS: Step[] = [
     { id: 5, name: "Confirm", Icon: CheckCircle2 },
 ];
 
+import { useBooking } from "@/context/BookingContext";
+
 interface BookingProgressProps {
     currentStep: number;
 }
 
 export default function BookingProgress({ currentStep }: BookingProgressProps) {
+    const { maxReachedStep, goToStep } = useBooking();
+
     return (
         <div className="mb-16 relative px-2 sm:px-4">
             <div className="flex items-center justify-between relative z-10 w-full">
@@ -35,6 +39,7 @@ export default function BookingProgress({ currentStep }: BookingProgressProps) {
                     const isActive = step.id === currentStep;
                     const isCompleted = step.id < currentStep;
                     const isUpcoming = step.id > currentStep;
+                    const isAccessible = step.id <= maxReachedStep;
 
                     return (
                         <div
@@ -49,14 +54,20 @@ export default function BookingProgress({ currentStep }: BookingProgressProps) {
                                 />
                             )}
 
-                            {/* Icon circle */}
-                            <div
+                            {/* Icon circle / Button */}
+                            <button
+                                type="button"
+                                onClick={() => isAccessible && goToStep(step.id)}
+                                disabled={!isAccessible}
                                 className={`flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full transition-all duration-500 shadow-sm z-10 ${isActive
-                                        ? "bg-primary text-white ring-4 ring-primary/20"
+                                        ? "bg-primary text-white ring-4 ring-primary/20 scale-110"
                                         : isCompleted
-                                            ? "bg-primary text-white"
-                                            : "bg-white border-2 border-slate-100 text-slate-300"
+                                            ? "bg-primary text-white hover:scale-105 hover:shadow-md cursor-pointer"
+                                            : isAccessible
+                                                ? "bg-white border-2 border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary cursor-pointer hover:scale-105"
+                                                : "bg-white border-2 border-slate-100 text-slate-300 cursor-not-allowed"
                                     }`}
+                                aria-label={`Go to step ${step.name}`}
                             >
                                 {isCompleted ? (
                                     <CheckCircle2 size={20} />
@@ -66,13 +77,13 @@ export default function BookingProgress({ currentStep }: BookingProgressProps) {
                                         className={isActive || isCompleted ? "opacity-100" : "opacity-40"}
                                     />
                                 )}
-                            </div>
+                            </button>
 
                             {/* Label */}
                             <span
                                 className={`mt-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] transition-colors duration-500 whitespace-nowrap ${isActive || isCompleted
-                                        ? "text-primary"
-                                        : "text-slate-400"
+                                    ? "text-primary"
+                                    : "text-slate-700"
                                     }`}
                             >
                                 {step.name}

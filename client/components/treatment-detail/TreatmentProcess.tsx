@@ -30,7 +30,7 @@ const TreatmentProcess = ({ steps }: TreatmentProcessProps) => {
                 {/* Steps */}
                 <div className="grid md:grid-cols-3 gap-12 lg:gap-16 relative">
                     {/* Connector line (desktop only) */}
-                    <div className="hidden md:block absolute top-8 left-[16.66%] right-[16.66%] h-px bg-primary/10 z-0" />
+                    <div className="hidden md:block absolute top-4 sm:p-8 left-[16.66%] right-[16.66%] h-px bg-primary/10 z-0" />
 
                     {steps.map((step, index) => {
                         const Icon = STEP_ICONS[index % STEP_ICONS.length];

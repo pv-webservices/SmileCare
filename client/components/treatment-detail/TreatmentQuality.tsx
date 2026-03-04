@@ -37,7 +37,7 @@ const TreatmentQuality = ({
                             />
                             {/* Badge overlay */}
                             <div className="absolute bottom-6 right-6 left-6 md:left-auto bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20">
-                                <p className="text-primary font-black text-2xl uppercase tracking-tighter mb-1">
+                                <p className="text-primary font-bold text-2xl uppercase tracking-tighter mb-1">
                                     {badge}
                                 </p>
                                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">

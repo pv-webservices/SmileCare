@@ -17,7 +17,7 @@ export const Card: React.FC<CardProps> = ({
         none: "",
         sm: "p-4",
         md: "p-6",
-        lg: "p-8",
+        lg: "p-4 sm:p-8",
     };
 
     const hoverEffect = hover ? "hover:shadow-lg transition-shadow duration-300 cursor-pointer" : "";

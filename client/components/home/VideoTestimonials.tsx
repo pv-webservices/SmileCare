@@ -39,7 +39,7 @@ const VideoTestimonials = () => {
 
     return (
         <section className="py-24 bg-navy-deep text-white overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4 sm:px-8">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <span className="text-accent-gold font-bold tracking-widest uppercase text-sm block mb-4">
                         Patient Stories
@@ -73,7 +73,7 @@ const VideoTestimonials = () => {
                             {current.quote}
                         </blockquote>
 
-                        <div className="flex gap-8 pt-6 border-t border-white/10">
+                        <div className="flex gap-4 sm:p-8 pt-6 border-t border-white/10">
                             <div>
                                 <p className="text-2xl font-bold text-accent-gold">{current.duration}</p>
                                 <p className="text-xs uppercase font-bold text-white/40 tracking-wider">Treatment Time</p>

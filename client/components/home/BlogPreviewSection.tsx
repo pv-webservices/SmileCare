@@ -8,7 +8,7 @@ const BlogPreviewSection = () => {
 
     return (
         <section className="py-24 bg-background-light">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4 sm:px-8">
                 <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16">
                     <div className="max-w-2xl">
                         <span className="text-primary font-bold tracking-widest uppercase text-sm block mb-4">Latest Insights</span>
@@ -45,7 +45,7 @@ const BlogPreviewSection = () => {
                             </div>
 
                             {/* Content */}
-                            <div className="md:w-2/3 p-8 md:p-12 flex flex-col justify-center">
+                            <div className="md:w-2/3 p-4 sm:p-8 md:p-12 flex flex-col justify-center">
                                 <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
                                     <span>{article.date}</span>
                                     <span className="w-1 h-1 rounded-full bg-gray-300" />

@@ -84,9 +84,9 @@ function DoctorModal({ doctor, onClose }: { doctor: Doctor; onClose: () => void 
                     </div>
                 </div>
 
-                <div className="p-8 space-y-6">
+                <div className="p-4 sm:p-8 space-y-6">
                     {/* Stats */}
-                    <div className="flex gap-8 p-5 bg-background-light rounded-2xl">
+                    <div className="flex gap-4 sm:p-8 p-5 bg-background-light rounded-2xl">
                         <div className="text-center flex-1">
                             <p className="text-2xl font-bold text-navy-deep">{doctor.stats.cases}</p>
                             <p className="text-xs uppercase font-bold text-gray-400 tracking-wider">Cases</p>
@@ -154,7 +154,7 @@ const DoctorsSection = () => {
     return (
         <>
             <section className="py-24 bg-background-light">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4 sm:px-8">
                     <div className="text-center max-w-3xl mx-auto mb-20">
                         <span className="text-primary font-bold tracking-widest uppercase text-sm block mb-4">Expert Doctors</span>
                         <h2 className="text-3xl md:text-5xl font-display font-bold text-navy-deep mb-6">
@@ -172,7 +172,7 @@ const DoctorsSection = () => {
                                     <Image src={doctor.image} alt={doctor.name} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/40 to-transparent" />
                                 </div>
-                                <div className="md:w-3/5 p-8 flex flex-col justify-center">
+                                <div className="md:w-3/5 p-4 sm:p-8 flex flex-col justify-center">
                                     <div className="mb-4">
                                         <h3 className="text-2xl font-display font-bold text-navy-deep mb-1">{doctor.name}</h3>
                                         <p className="text-primary font-bold uppercase tracking-widest text-[10px]">{doctor.specialty}</p>

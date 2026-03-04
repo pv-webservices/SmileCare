@@ -38,8 +38,8 @@ const BookingBar = () => {
     const today = new Date().toISOString().split("T")[0];
 
     return (
-        <div className="relative z-20 -mt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-white rounded-2xl shadow-2xl p-6 lg:p-8 flex flex-col lg:flex-row items-end gap-6 border border-gray-100">
+        <div className="relative z-20 -mt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-4 sm:px-8">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 lg:p-4 sm:p-8 flex flex-col lg:flex-row items-end gap-6 border border-gray-100">
                 <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-3 gap-6">
 
                     {/* Treatment */}

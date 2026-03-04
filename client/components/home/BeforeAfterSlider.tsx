@@ -57,7 +57,7 @@ function Slider({ before, after }: { before: string; after: string }) {
                 style={{ left: `${pos}%` }}
             >
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-xl flex items-center justify-center">
-                    <span className="text-navy-deep font-black text-sm">⇔</span>
+                    <span className="text-navy-deep font-bold text-sm">⇔</span>
                 </div>
             </div>
         </div>
@@ -67,7 +67,7 @@ function Slider({ before, after }: { before: string; after: string }) {
 const BeforeAfterSlider = () => {
     return (
         <section className="py-24 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4 sm:px-8">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <span className="text-primary font-bold tracking-widest uppercase text-sm block mb-4">
                         Transformations
@@ -81,7 +81,7 @@ const BeforeAfterSlider = () => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:p-8">
                     {cases.map((c, idx) => (
                         <div key={idx}>
                             <Slider before={c.before} after={c.after} />

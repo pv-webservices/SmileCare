@@ -29,7 +29,7 @@ const TreatmentCTA = ({ title }: TreatmentCTAProps) => {
                             <span className="text-accent-gold font-bold tracking-[0.2em] uppercase text-xs mb-4 block drop-shadow-sm">
                                 Clinical Luxury Redefined
                             </span>
-                            <h2 className="text-4xl md:text-6xl font-display font-black text-white mb-8 leading-[1.1]">
+                            <h2 className="text-4xl md:text-6xl font-display font-bold text-white mb-8 leading-[1.1]">
                                 Transform Your Smile with <span className="text-accent-gold italic">Dr. Julian Thorne</span>
                             </h2>
                             <p className="text-lg md:text-xl text-white/80 mb-10 max-w-lg leading-relaxed font-body font-light">
@@ -39,13 +39,13 @@ const TreatmentCTA = ({ title }: TreatmentCTAProps) => {
                             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                                 <Link
                                     href="/booking"
-                                    className="bg-white text-primary px-8 py-4 rounded-xl font-bold text-lg hover:bg-slate-100 transition-all shadow-xl shadow-black/10 inline-block text-center"
+                                    className="bg-white text-primary px-4 sm:px-8 py-4 rounded-xl font-bold text-lg hover:bg-slate-100 transition-all shadow-xl shadow-black/10 inline-block text-center"
                                 >
                                     Book Consultation
                                 </Link>
                                 <Link
                                     href="/treatments"
-                                    className="bg-transparent border-2 border-white/20 hover:border-white text-white px-8 py-4 rounded-xl font-bold text-lg transition-all inline-block text-center"
+                                    className="bg-transparent border-2 border-white/20 hover:border-white text-white px-4 sm:px-8 py-4 rounded-xl font-bold text-lg transition-all inline-block text-center"
                                 >
                                     Explore All Treatments
                                 </Link>

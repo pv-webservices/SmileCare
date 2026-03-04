@@ -2,7 +2,7 @@ const TreatmentsHero = () => {
     return (
         <div className="flex flex-col gap-6 mb-16 bg-background-light">
             <div className="max-w-3xl">
-                <h1 className="font-display text-5xl md:text-6xl font-black text-slate-900 leading-tight tracking-tight mb-4">
+                <h1 className="font-display text-5xl md:text-6xl font-bold text-slate-900 leading-tight tracking-tight mb-4">
                     Advanced Dental{" "}
                     <span className="text-primary underline decoration-primary/20 decoration-4 underline-offset-8">
                         Care

@@ -95,16 +95,16 @@ export default function Sidebar() {
                 <div className="p-6 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="size-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                            <span className="font-display font-black text-lg">S</span>
+                            <span className="font-display font-bold text-lg">S</span>
                         </div>
                         <div className="flex flex-col">
                             <h1 className="text-primary text-lg font-bold leading-none">SmileCare</h1>
-                            <p className="text-primary/50 text-xs font-semibold uppercase tracking-wider">Clinical Luxury</p>
+                            <p className="text-primary/90 text-xs font-semibold uppercase tracking-wider">Clinical Luxury</p>
                         </div>
                     </div>
                     <button
                         onClick={() => setOpen(false)}
-                        className="lg:hidden text-primary/40 hover:text-primary"
+                        className="lg:hidden text-primary/90 hover:text-primary"
                         aria-label="Close menu"
                     >
                         <X size={20} />
@@ -122,7 +122,7 @@ export default function Sidebar() {
                                 onClick={() => setOpen(false)}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive(item.href)
                                     ? "bg-primary/10 text-primary font-semibold"
-                                    : "text-primary/50 hover:bg-primary/5 hover:text-primary/70"
+                                    : "text-primary/90 hover:bg-primary/5 hover:text-primary/70"
                                     }`}
                             >
                                 <item.icon size={20} />
@@ -140,7 +140,7 @@ export default function Sidebar() {
                                 onClick={() => setOpen(false)}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive(item.href)
                                     ? "bg-primary/10 text-primary font-semibold"
-                                    : "text-primary/50 hover:bg-primary/5 hover:text-primary/70"
+                                    : "text-primary/90 hover:bg-primary/5 hover:text-primary/70"
                                     }`}
                             >
                                 <item.icon size={20} />
@@ -168,7 +168,7 @@ export default function Sidebar() {
                             <p className="text-sm font-bold text-primary truncate">
                                 {user?.name || "Guest User"}
                             </p>
-                            <p className="text-[10px] text-primary/40 uppercase tracking-tight">
+                            <p className="text-[10px] text-primary/90 uppercase tracking-tight">
                                 {user?.role === "admin" ? "Admin" : "Patient"}
                             </p>
                         </div>

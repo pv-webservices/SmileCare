@@ -142,7 +142,7 @@ export default function ProfilePage() {
         children?: React.ReactNode;
     }) => (
         <div className="space-y-2">
-            <label className="flex items-center gap-2 text-xs font-bold text-primary/40 uppercase tracking-wider">
+            <label className="flex items-center gap-2 text-xs font-bold text-primary/90 uppercase tracking-wider">
                 <Icon size={13} />
                 {label}
             </label>
@@ -181,13 +181,13 @@ export default function ProfilePage() {
     return (
         <>
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-8 py-6">
+            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-4 sm:px-8 py-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="font-display text-3xl font-black text-primary tracking-tight flex items-center gap-3">
+                        <h2 className="font-display text-3xl font-bold text-primary tracking-tight flex items-center gap-3">
                             <User size={28} /> My Profile
                         </h2>
-                        <p className="text-primary/50 mt-1">
+                        <p className="text-primary/90 mt-1">
                             View and manage your personal information
                         </p>
                     </div>
@@ -204,13 +204,13 @@ export default function ProfilePage() {
                 </div>
             </header>
 
-            <div className="p-8 max-w-4xl mx-auto space-y-8">
+            <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-8">
 
                 {/* Profile Card */}
-                <div className="bg-white rounded-2xl border border-primary/5 p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                <div className="bg-white rounded-2xl border border-primary/5 p-4 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
                     {/* Avatar */}
                     <div className="shrink-0">
-                        <div className="w-24 h-24 rounded-2xl bg-primary flex items-center justify-center text-white font-display font-black text-3xl shadow-lg shadow-primary/20">
+                        <div className="w-24 h-24 rounded-2xl bg-primary flex items-center justify-center text-white font-display font-bold text-3xl shadow-lg shadow-primary/20">
                             {initials || "U"}
                         </div>
                     </div>
@@ -219,7 +219,7 @@ export default function ProfilePage() {
                         <h3 className="text-2xl font-display font-bold text-primary">
                             {form.name || "Patient"}
                         </h3>
-                        <p className="text-primary/50 text-sm mt-1">{form.email}</p>
+                        <p className="text-primary/90 text-sm mt-1">{form.email}</p>
                         <div className="flex items-center justify-center sm:justify-start gap-3 mt-3">
                             <span className="flex items-center gap-1.5 px-3 py-1 bg-accent-gold/10 text-accent-gold text-xs font-bold rounded-full">
                                 <Star size={11} />
@@ -237,7 +237,7 @@ export default function ProfilePage() {
                 <form onSubmit={handleSave} className="space-y-6">
 
                     {/* Personal Info */}
-                    <div className="bg-white rounded-2xl border border-primary/5 p-8">
+                    <div className="bg-white rounded-2xl border border-primary/5 p-4 sm:p-8">
                         <h4 className="text-base font-bold text-primary mb-6 pb-4 border-b border-primary/5">
                             Personal Information
                         </h4>
@@ -347,7 +347,7 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Medical Info */}
-                    <div className="bg-white rounded-2xl border border-primary/5 p-8">
+                    <div className="bg-white rounded-2xl border border-primary/5 p-4 sm:p-8">
                         <h4 className="text-base font-bold text-primary mb-6 pb-4 border-b border-primary/5">
                             Medical Information
                         </h4>
@@ -396,7 +396,7 @@ export default function ProfilePage() {
                             <button
                                 type="submit"
                                 disabled={saving}
-                                className="flex items-center gap-2 bg-primary text-white px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all disabled:opacity-50"
+                                className="flex items-center gap-2 bg-primary text-white px-4 sm:px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all disabled:opacity-50"
                             >
                                 {saving ? (
                                     <Loader2 size={16} className="animate-spin" />
@@ -410,11 +410,11 @@ export default function ProfilePage() {
                 </form>
 
                 {/* Password notice */}
-                <div className="bg-white rounded-2xl border border-primary/5 p-8">
+                <div className="bg-white rounded-2xl border border-primary/5 p-4 sm:p-8">
                     <h4 className="text-base font-bold text-primary mb-2">
                         Security
                     </h4>
-                    <p className="text-sm text-primary/50 leading-relaxed">
+                    <p className="text-sm text-primary/90 leading-relaxed">
                         To change your password, use the{" "}
                         <span className="font-bold text-primary">
                             &quot;Forgot Password&quot;

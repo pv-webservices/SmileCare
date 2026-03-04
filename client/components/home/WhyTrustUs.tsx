@@ -34,7 +34,7 @@ const reasons = [
 const WhyTrustUs = () => {
     return (
         <section className="py-24 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4 sm:px-8">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <span className="text-primary font-bold tracking-widest uppercase text-sm block mb-4">
                         Why Choose Us
@@ -48,11 +48,11 @@ const WhyTrustUs = () => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:p-8">
                     {reasons.map((r, idx) => (
                         <div
                             key={idx}
-                            className="group bg-background-light rounded-3xl p-8 hover:bg-primary hover:shadow-2xl hover:shadow-primary/20 transition-all duration-500 cursor-default"
+                            className="group bg-background-light rounded-3xl p-4 sm:p-8 hover:bg-primary hover:shadow-2xl hover:shadow-primary/20 transition-all duration-500 cursor-default"
                         >
                             <div className="w-14 h-14 rounded-2xl bg-primary/10 group-hover:bg-white/20 flex items-center justify-center mb-6 transition-colors">
                                 <span className="material-symbols-outlined text-primary group-hover:text-white text-2xl transition-colors">

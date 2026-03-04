@@ -58,7 +58,7 @@ export default async function BlogArticlePage({ params }: Props) {
 
     return (
         <main className="min-h-screen bg-background-light pt-28 pb-24">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-4 sm:px-8">
                 {/* Breadcrumb */}
                 <nav className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 mb-10">
                     <Link href="/" className="hover:text-primary transition-colors">Home</Link>
@@ -113,7 +113,7 @@ export default async function BlogArticlePage({ params }: Props) {
                     </p>
                     <Link
                         href="/booking"
-                        className="inline-block bg-accent-gold text-navy-deep px-8 py-3 rounded-full font-bold hover:opacity-90 transition-opacity"
+                        className="inline-block bg-accent-gold text-navy-deep px-4 sm:px-8 py-3 rounded-full font-bold hover:opacity-90 transition-opacity"
                     >
                         Book an Appointment
                     </Link>
@@ -125,7 +125,7 @@ export default async function BlogArticlePage({ params }: Props) {
                         <h2 className="text-2xl font-display font-bold text-navy-deep mb-8">
                             More Articles
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:p-8">
                             {others.map((a) => (
                                 <Link
                                     key={a.slug}

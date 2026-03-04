@@ -35,19 +35,19 @@ export default function SupportPage() {
 
     return (
         <>
-            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-8 py-6">
-                <h2 className="font-display text-3xl font-black text-primary tracking-tight flex items-center gap-3">
+            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-4 sm:px-8 py-6">
+                <h2 className="font-display text-3xl font-bold text-primary tracking-tight flex items-center gap-3">
                     <HelpCircle size={28} /> Support
                 </h2>
-                <p className="text-primary/50 mt-1">We&apos;re here to help</p>
+                <p className="text-primary/90 mt-1">We&apos;re here to help</p>
             </header>
 
-            <div className="p-8 max-w-2xl mx-auto space-y-6">
+            <div className="p-4 sm:p-8 max-w-2xl mx-auto space-y-6">
                 {/* Info Card */}
                 <div className="bg-primary/5 rounded-2xl border border-primary/10 p-6 relative overflow-hidden">
                     <div className="relative z-10">
                         <h3 className="text-lg font-bold text-primary mb-2">Get in Touch</h3>
-                        <p className="text-sm text-primary/50 leading-relaxed">
+                        <p className="text-sm text-primary/90 leading-relaxed">
                             Our clinical advisors are available Monday–Saturday, 9 AM – 7 PM.
                             Send us a message and we&apos;ll get back to you as soon as possible.
                         </p>
@@ -72,11 +72,11 @@ export default function SupportPage() {
                 )}
 
                 {/* Message Form */}
-                <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-primary/5 p-8 space-y-4">
+                <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-primary/5 p-4 sm:p-8 space-y-4">
                     <h3 className="text-lg font-bold text-primary">Send a Message</h3>
 
                     <div>
-                        <label className="block text-xs font-bold text-primary/40 uppercase tracking-wider mb-2">Your Message</label>
+                        <label className="block text-xs font-bold text-primary/90 uppercase tracking-wider mb-2">Your Message</label>
                         <textarea
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
@@ -97,7 +97,7 @@ export default function SupportPage() {
                 </form>
 
                 {/* FAQ Section */}
-                <div className="bg-white rounded-2xl border border-primary/5 p-8 space-y-4">
+                <div className="bg-white rounded-2xl border border-primary/5 p-4 sm:p-8 space-y-4">
                     <h3 className="text-lg font-bold text-primary">Frequently Asked Questions</h3>
                     <div className="space-y-3">
                         {[
@@ -110,7 +110,7 @@ export default function SupportPage() {
                                     <span className="text-sm font-bold text-primary">{faq.q}</span>
                                     <span className="text-primary/30 group-open:rotate-180 transition-transform">▼</span>
                                 </summary>
-                                <p className="px-3 pb-3 text-sm text-primary/50">{faq.a}</p>
+                                <p className="px-3 pb-3 text-sm text-primary/90">{faq.a}</p>
                             </details>
                         ))}
                     </div>

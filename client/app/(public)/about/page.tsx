@@ -120,7 +120,7 @@ export default async function AboutPage() {
             <section className="max-w-7xl mx-auto px-6 py-12">
                 <div className="grid lg:grid-cols-2 gap-12 items-center">
                     <div className="order-2 lg:order-1">
-                        <h1 className="font-display text-5xl lg:text-6xl font-black leading-[1.1] mb-6 text-primary">
+                        <h1 className="font-display text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 text-primary">
                             Excellence in <br />
                             <span className="italic text-accent-gold">Every Smile</span>
                         </h1>
@@ -128,10 +128,10 @@ export default async function AboutPage() {
                             Experience clinical luxury where advanced dental science meets unparalleled patient comfort. Our state-of-the-art facility is designed for those who seek the highest standard of oral health.
                         </p>
                         <div className="flex flex-wrap gap-4">
-                            <Link href="/contact" className="bg-primary text-white px-8 py-4 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20">
+                            <Link href="/contact" className="bg-primary text-white px-4 sm:px-8 py-4 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20">
                                 Explore Our Facility
                             </Link>
-                            <a href="#specialists" className="border border-primary/20 bg-primary/5 text-primary px-8 py-4 rounded-xl font-bold hover:bg-primary/10 transition-all">
+                            <a href="#specialists" className="border border-primary/20 bg-primary/5 text-primary px-4 sm:px-8 py-4 rounded-xl font-bold hover:bg-primary/10 transition-all">
                                 Meet Our Team
                             </a>
                         </div>
@@ -156,7 +156,7 @@ export default async function AboutPage() {
             {/* Trust Signals */}
             <section className="bg-pearl border-y border-primary/5 py-16 mb-20">
                 <div className="max-w-7xl mx-auto px-6">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:p-8">
                         {trustSignals.map((signal) => (
                             <div key={signal.label} className="flex flex-col items-center text-center gap-3">
                                 <span className="material-symbols-outlined text-primary text-4xl">{signal.icon}</span>
@@ -173,9 +173,9 @@ export default async function AboutPage() {
                     <h2 className="font-display text-3xl font-bold text-primary mb-4">The Core of SmileCare</h2>
                     <div className="h-1 w-20 bg-primary mx-auto" />
                 </div>
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid md:grid-cols-3 gap-4 sm:p-8">
                     {coreValues.map((value) => (
-                        <div key={value.title} className="group p-8 rounded-2xl bg-pearl border border-primary/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all">
+                        <div key={value.title} className="group p-4 sm:p-8 rounded-2xl bg-pearl border border-primary/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all">
                             <div className="size-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
                                 <span className="material-symbols-outlined">{value.icon}</span>
                             </div>
@@ -216,7 +216,7 @@ export default async function AboutPage() {
                         <span className="material-symbols-outlined">arrow_forward</span>
                     </Link>
                 </div>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:p-8">
                     {specialists.map((doctor: any) => (
                         <div key={doctor.name} className="group">
                             <div className="aspect-[4/5] rounded-2xl overflow-hidden mb-4 relative">

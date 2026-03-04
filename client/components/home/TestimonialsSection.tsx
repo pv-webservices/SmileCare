@@ -3,7 +3,7 @@ import Image from "next/image";
 const TestimonialsSection = () => {
     return (
         <section className="py-24 bg-white relative overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4 sm:px-8">
                 <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
                     {/* Left: Testimonials Cards */}
                     <div className="flex-1 space-y-12 order-2 lg:order-1">
@@ -30,7 +30,7 @@ const TestimonialsSection = () => {
                                     rating: 5
                                 }
                             ].map((testimonial, idx) => (
-                                <div key={idx} className="bg-background-light p-8 rounded-3xl border border-gray-100 flex flex-col gap-4 hover:shadow-xl transition-shadow">
+                                <div key={idx} className="bg-background-light p-4 sm:p-8 rounded-3xl border border-gray-100 flex flex-col gap-4 hover:shadow-xl transition-shadow">
                                     <div className="flex gap-1">
                                         {[...Array(testimonial.rating)].map((_, i) => (
                                             <span key={i} className="text-accent-gold text-lg">★</span>

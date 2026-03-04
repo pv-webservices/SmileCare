@@ -74,7 +74,7 @@ export default function ContactPage() {
 
                 {/* Hero */}
                 <div className="max-w-3xl mb-16">
-                    <h1 className="font-display text-5xl md:text-6xl font-black text-primary leading-tight mb-4 tracking-tight">
+                    <h1 className="font-display text-5xl md:text-6xl font-bold text-primary leading-tight mb-4 tracking-tight">
                         Visit Our Sanctuary
                     </h1>
                     <p className="text-lg font-sans text-primary/60 leading-relaxed max-w-2xl">
@@ -86,7 +86,7 @@ export default function ContactPage() {
                 <div className="grid lg:grid-cols-2 gap-16">
 
                     {/* LEFT — Contact Form */}
-                    <div className="bg-pearl rounded-2xl p-8 shadow-md border border-primary/10 h-fit">
+                    <div className="bg-pearl rounded-2xl p-4 sm:p-8 shadow-md border border-primary/10 h-fit">
                         <h3 className="font-display text-2xl text-primary mb-8 font-bold">Send an Inquiry</h3>
 
                         {formSubmitted ? (
@@ -168,7 +168,7 @@ export default function ContactPage() {
                     <div className="space-y-10">
 
                         {/* Clinic Hours */}
-                        <div className="bg-primary/5 p-8 rounded-2xl border border-primary/20">
+                        <div className="bg-primary/5 p-4 sm:p-8 rounded-2xl border border-primary/20">
                             <div className="flex items-center gap-3 text-primary mb-6">
                                 <span className="material-symbols-outlined">schedule</span>
                                 <h3 className="font-display text-xl font-bold">Clinic Hours</h3>

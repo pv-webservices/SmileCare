@@ -60,7 +60,7 @@ export default function SpecialistStep({ specialists, selectedId, onSelect, isLo
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className="material-symbols-outlined text-yellow-500 text-xs fill-current">star</span>
                                     <span className="text-xs font-bold text-slate-700">4.9</span>
-                                    <span className="text-[10px] text-slate-400 font-medium">(100+ reviews)</span>
+                                    <span className="text-[10px] text-slate-700 font-medium">(100+ reviews)</span>
                                 </div>
                             </div>
 

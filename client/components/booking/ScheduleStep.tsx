@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarX, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarX, CalendarDays, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 
 import { Slot } from "@/lib/booking.api";
 
@@ -33,6 +33,7 @@ interface ScheduleStepProps {
     onSlotSelect: (slot: Slot) => void;
     isLoadingSlots: boolean;
     slotsError?: string | null;
+    onProceed?: () => void;
 }
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -45,7 +46,8 @@ export default function ScheduleStep({
     selectedSlotId,
     onSlotSelect,
     isLoadingSlots,
-    slotsError
+    slotsError,
+    onProceed
 }: ScheduleStepProps) {
     const [viewDate, setViewDate] = useState(new Date());
 
@@ -78,10 +80,10 @@ export default function ScheduleStep({
                             {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
                         </h4>
                         <div className="flex gap-2">
-                            <button onClick={prevMonth} className="p-1 rounded-lg hover:bg-slate-50 text-slate-400 hover:text-primary transition-colors">
+                            <button onClick={prevMonth} className="p-1 rounded-lg hover:bg-slate-50 text-slate-700 hover:text-primary transition-colors">
                                 <ChevronLeft size={20} />
                             </button>
-                            <button onClick={nextMonth} className="p-1 rounded-lg hover:bg-slate-50 text-slate-400 hover:text-primary transition-colors">
+                            <button onClick={nextMonth} className="p-1 rounded-lg hover:bg-slate-50 text-slate-700 hover:text-primary transition-colors">
                                 <ChevronRight size={20} />
                             </button>
                         </div>
@@ -134,14 +136,14 @@ export default function ScheduleStep({
                     )}
 
                     {!isLoadingSlots && Array.isArray(slots) && slots.length === 0 && selectedDate && (
-                        <div className="py-8 text-center text-slate-400 text-sm font-medium">
+                        <div className="py-8 text-center text-slate-700 text-sm font-medium">
                             <CalendarX size={28} className="mx-auto mb-3 text-slate-300" />
                             <p>No available slots for this date. Please try another day.</p>
                         </div>
                     )}
 
                     {!isLoadingSlots && !selectedDate && (
-                        <div className="py-8 text-center text-slate-400 text-sm font-medium">
+                        <div className="py-8 text-center text-slate-700 text-sm font-medium">
                             <CalendarDays size={28} className="mx-auto mb-3 text-slate-300" />
                             <p>Select a date to see available slots.</p>
                         </div>
@@ -173,9 +175,24 @@ export default function ScheduleStep({
                         </div>
                     )}
 
-                    <p className="mt-8 text-[11px] text-slate-400 italic font-medium">
+                    <p className="mt-8 text-[11px] text-slate-700 italic font-medium">
                         Expected duration: 60 minutes
                     </p>
+
+                    <div className="mt-8 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={onProceed}
+                            disabled={!selectedSlotId}
+                            className={`flex items-center gap-2.5 px-4 sm:px-8 py-4 rounded-xl font-bold text-base shadow-lg transition-all ${selectedSlotId
+                                    ? "bg-primary text-white hover:opacity-90 shadow-primary/20 active:scale-[0.98]"
+                                    : "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none"
+                                }`}
+                        >
+                            Proceed to Details
+                            <ArrowRight size={18} />
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>

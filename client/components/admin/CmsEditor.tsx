@@ -77,7 +77,7 @@ export default function CmsEditor({ item, onSave, onCancel }: CmsEditorProps) {
     };
 
     return (
-        <div className="bg-white border border-primary/10 rounded-2xl p-8 shadow-sm">
+        <div className="bg-white border border-primary/10 rounded-2xl p-4 sm:p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8 pb-4 border-b border-primary/10">
                 <h3 className="font-display font-bold text-2xl text-primary">
                     {item ? `Edit: ${item.title}` : "Create New Content"}

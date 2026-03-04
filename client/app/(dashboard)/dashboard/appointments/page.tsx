@@ -104,22 +104,22 @@ export default function AppointmentsPage() {
 
     return (
         <>
-            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-8 py-6">
-                <h2 className="font-display text-3xl font-black text-primary tracking-tight flex items-center gap-3">
+            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-4 sm:px-8 py-6">
+                <h2 className="font-display text-3xl font-bold text-primary tracking-tight flex items-center gap-3">
                     <CalendarDays size={28} /> Appointments
                 </h2>
-                <p className="text-primary/50 mt-1">
+                <p className="text-primary/90 mt-1">
                     {appointments.length} scheduled
                 </p>
             </header>
 
             {loading && appointments.length === 0 ? (
-                <div className="p-8 max-w-4xl mx-auto space-y-4">
+                <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-4">
                     <BookingCardSkeleton />
                     <BookingCardSkeleton />
                 </div>
             ) : appointments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-96 text-primary/40">
+                <div className="flex flex-col items-center justify-center h-96 text-primary/90">
                     <CalendarDays size={64} className="mb-4" />
                     <p className="text-lg font-bold">No appointments found</p>
                     <p className="text-sm">Book a new appointment to get started.</p>
@@ -131,7 +131,7 @@ export default function AppointmentsPage() {
                     </Link>
                 </div>
             ) : (
-                <div className="p-8 max-w-4xl mx-auto space-y-4">
+                <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-4">
                     {appointments.map((apt) => (
                         <div
                             key={apt.id}
@@ -262,7 +262,7 @@ export default function AppointmentsPage() {
                         same specialist.
                     </p>
                     <div className="bg-primary/5 rounded-xl p-4 space-y-2">
-                        <p className="text-xs font-bold text-primary/50 uppercase tracking-wider">
+                        <p className="text-xs font-bold text-primary/90 uppercase tracking-wider">
                             Current Appointment
                         </p>
                         <p className="text-sm font-bold text-primary">

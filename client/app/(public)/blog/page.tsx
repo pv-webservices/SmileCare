@@ -45,7 +45,7 @@ export default async function BlogPage() {
 
     return (
         <main className="min-h-screen bg-background-light pt-28 pb-24">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4 sm:px-8">
                 {/* Header */}
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <span className="text-primary font-bold tracking-widest uppercase text-sm block mb-4">
@@ -81,7 +81,7 @@ export default async function BlogPage() {
                             </div>
 
                             {/* Content */}
-                            <div className="p-8 flex flex-col flex-grow">
+                            <div className="p-4 sm:p-8 flex flex-col flex-grow">
                                 <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
                                     <span>{article.date}</span>
                                     <span className="w-1 h-1 rounded-full bg-gray-300" />

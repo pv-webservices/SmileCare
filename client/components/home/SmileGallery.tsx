@@ -25,7 +25,7 @@ const SmileGallery = () => {
 
     return (
         <section id="gallery" className="py-24 bg-navy-deep text-white overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16 flex flex-col md:flex-row justify-between items-end gap-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4 sm:px-8 mb-16 flex flex-col md:flex-row justify-between items-end gap-6">
                 <div className="max-w-2xl">
                     <span className="text-accent-gold font-bold tracking-widest uppercase text-sm block mb-4">Patient Transformation</span>
                     <h2 className="text-3xl md:text-5xl font-display font-bold leading-tight">
@@ -49,7 +49,7 @@ const SmileGallery = () => {
             </div>
 
             <div className="relative pl-4 sm:pl-6 lg:pl-[max(1rem,calc((100vw-1280px)/2+1rem))]">
-                <div ref={scrollRef} className="flex gap-8 overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory scroll-smooth">
+                <div ref={scrollRef} className="flex gap-4 sm:p-8 overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory scroll-smooth">
                     {gallery.map((item, idx) => (
                         <div
                             key={idx}
@@ -65,7 +65,7 @@ const SmileGallery = () => {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/100 via-black/40 to-transparent opacity-60 group-hover:opacity-90 transition-opacity" />
 
                             {/* Content */}
-                            <div className="absolute bottom-0 left-0 p-8 transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                            <div className="absolute bottom-0 left-0 p-4 sm:p-8 transform translate-y-4 group-hover:translate-y-0 transition-transform">
                                 <span className="inline-block px-3 py-1 bg-accent-gold text-navy-deep text-[10px] font-bold uppercase tracking-wider rounded-full mb-3">
                                     {item.category}
                                 </span>

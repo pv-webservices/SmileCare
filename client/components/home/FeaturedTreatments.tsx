@@ -28,7 +28,7 @@ const treatments = [
 const FeaturedTreatments = () => {
     return (
         <section className="py-24 bg-background-light">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4 sm:px-8">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <span className="text-primary font-bold tracking-widest uppercase text-sm block mb-4">Our Specialities</span>
                     <h2 className="text-3xl md:text-5xl font-display font-bold text-navy-deep mb-6">
@@ -39,7 +39,7 @@ const FeaturedTreatments = () => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:p-8">
                     {treatments.map((item, idx) => (
                         <div
                             key={idx}
@@ -60,7 +60,7 @@ const FeaturedTreatments = () => {
                             </div>
 
                             {/* Content */}
-                            <div className="p-8 flex-grow flex flex-col">
+                            <div className="p-4 sm:p-8 flex-grow flex flex-col">
                                 <h3 className="text-2xl font-display font-bold text-navy-deep mb-4 group-hover:text-primary transition-colors">
                                     {item.title}
                                 </h3>

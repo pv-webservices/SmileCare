@@ -64,9 +64,9 @@ export default function Modal({
                 `}
             >
                 {/* Header */}
-                <div className="flex items-start justify-between gap-4 px-8 pt-8 pb-5 border-b border-slate-100">
+                <div className="flex items-start justify-between gap-4 px-4 sm:px-8 pt-8 pb-5 border-b border-slate-100">
                     <div>
-                        <h2 className="font-display text-xl font-black text-slate-900">
+                        <h2 className="font-display text-xl font-bold text-slate-900">
                             {title}
                         </h2>
                         {description && (
@@ -85,7 +85,7 @@ export default function Modal({
                 </div>
 
                 {/* Body */}
-                <div className="px-8 py-6">{children}</div>
+                <div className="px-4 sm:px-8 py-6">{children}</div>
             </div>
         </div>
     );

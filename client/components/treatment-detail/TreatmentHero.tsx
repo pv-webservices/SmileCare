@@ -55,7 +55,7 @@ const TreatmentHero = ({
                     </div>
 
                     {/* Title */}
-                    <h1 className="text-5xl md:text-7xl font-display font-black text-white mb-6 leading-tight tracking-tight">
+                    <h1 className="text-5xl md:text-7xl font-display font-bold text-white mb-6 leading-tight tracking-tight">
                         {title}
                     </h1>
 
@@ -71,7 +71,7 @@ const TreatmentHero = ({
                             <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-0.5">
                                 Starting from
                             </p>
-                            <p className="text-white font-display font-black text-xl">
+                            <p className="text-white font-display font-bold text-xl">
                                 ₹{startingPrice.toLocaleString("en-IN")}
                             </p>
                         </div>

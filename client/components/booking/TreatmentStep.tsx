@@ -72,7 +72,7 @@ export default function TreatmentStep({ treatments, selectedId, onSelect, isLoad
                             <div className="flex justify-between items-start mb-4">
                                 <Stethoscope
                                     size={28}
-                                    className={isSelected ? "text-primary" : "text-slate-400 group-hover:text-primary transition-colors"}
+                                    className={isSelected ? "text-primary" : "text-slate-700 group-hover:text-primary transition-colors"}
                                 />
                                 {isSelected && (
                                     <div className="bg-primary text-white size-6 rounded-full flex items-center justify-center shadow-lg shadow-primary/20">

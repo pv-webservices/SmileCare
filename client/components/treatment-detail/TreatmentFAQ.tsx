@@ -48,7 +48,7 @@ const TreatmentFAQ = ({ faqs }: TreatmentFAQProps) => {
                                     onClick={() =>
                                         setOpenIndex(isOpen ? -1 : index)
                                     }
-                                    className="w-full flex justify-between items-center p-6 sm:p-8 text-left bg-white hover:bg-slate-50/60 transition-colors"
+                                    className="w-full flex justify-between items-center p-6 sm:p-4 sm:p-8 text-left bg-white hover:bg-slate-50/60 transition-colors"
                                     aria-expanded={isOpen}
                                 >
                                     <span className="font-bold text-base sm:text-lg text-slate-900 pr-6 leading-snug">
@@ -71,7 +71,7 @@ const TreatmentFAQ = ({ faqs }: TreatmentFAQProps) => {
                                             : "max-h-0 opacity-0"
                                         }`}
                                 >
-                                    <p className="px-6 sm:px-8 pb-6 sm:pb-8 text-slate-600 leading-relaxed text-base border-t border-slate-100 pt-5">
+                                    <p className="px-6 sm:px-4 sm:px-8 pb-6 sm:pb-8 text-slate-600 leading-relaxed text-base border-t border-slate-100 pt-5">
                                         {faq.answer}
                                     </p>
                                 </div>

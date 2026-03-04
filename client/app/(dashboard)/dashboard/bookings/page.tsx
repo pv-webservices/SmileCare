@@ -243,23 +243,23 @@ export default function BookingsPage() {
 
     return (
         <>
-            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-8 py-6">
-                <h2 className="font-display text-3xl font-black text-primary tracking-tight flex items-center gap-3">
+            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-4 sm:px-8 py-6">
+                <h2 className="font-display text-3xl font-bold text-primary tracking-tight flex items-center gap-3">
                     <CalendarCheck size={28} /> My Bookings
                 </h2>
-                <p className="text-primary/50 mt-1">
+                <p className="text-primary/90 mt-1">
                     All your appointments in one place
                 </p>
             </header>
 
             {loading && upcoming.length === 0 && history.length === 0 ? (
-                <div className="p-8 max-w-4xl mx-auto space-y-4">
+                <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-4">
                     <BookingCardSkeleton />
                     <BookingCardSkeleton />
                     <BookingCardSkeleton />
                 </div>
             ) : (
-                <div className="p-8 max-w-4xl mx-auto">
+                <div className="p-4 sm:p-8 max-w-4xl mx-auto">
 
                     {/* Tabs */}
                     <div className="flex gap-1 p-1 bg-white border border-primary/5 rounded-xl mb-8 w-fit shadow-sm">
@@ -269,12 +269,12 @@ export default function BookingsPage() {
                                 onClick={() => setTab(t)}
                                 className={`px-6 py-2.5 rounded-lg text-sm font-bold capitalize transition-all ${tab === t
                                     ? "bg-primary text-white shadow-sm"
-                                    : "text-primary/40 hover:text-primary/60"
+                                    : "text-primary/90 hover:text-primary/60"
                                     }`}
                             >
                                 {t === "upcoming" ? "Upcoming" : "Past"}
                                 {t === "upcoming" && upcoming.length > 0 && (
-                                    <span className="ml-2 bg-white/20 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                                    <span className="ml-2 bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                                         {upcoming.length}
                                     </span>
                                 )}

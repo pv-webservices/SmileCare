@@ -36,11 +36,11 @@ export default function DocumentsPage() {
 
     return (
         <>
-            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-8 py-6">
-                <h2 className="font-display text-3xl font-black text-primary tracking-tight flex items-center gap-3">
+            <header className="sticky top-0 z-40 bg-background-light/80 backdrop-blur-md border-b border-primary/5 px-4 sm:px-8 py-6">
+                <h2 className="font-display text-3xl font-bold text-primary tracking-tight flex items-center gap-3">
                     <FolderOpen size={28} /> Clinical Documents
                 </h2>
-                <p className="text-primary/50 mt-1">{docs.length} files available</p>
+                <p className="text-primary/90 mt-1">{docs.length} files available</p>
             </header>
 
             {loading ? (
@@ -48,7 +48,7 @@ export default function DocumentsPage() {
                     <Loader2 size={32} className="animate-spin text-primary" />
                 </div>
             ) : (
-                <div className="p-8 max-w-3xl mx-auto space-y-3">
+                <div className="p-4 sm:p-8 max-w-3xl mx-auto space-y-3">
                     {docs.map((doc) => {
                         const Icon = iconMap[doc.type] || FileText;
                         return (
@@ -58,7 +58,7 @@ export default function DocumentsPage() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-primary truncate">{doc.name}</p>
-                                    <p className="text-xs text-primary/40 mt-0.5">{doc.type} • {doc.size}</p>
+                                    <p className="text-xs text-primary/90 mt-0.5">{doc.type} • {doc.size}</p>
                                 </div>
                                 <button className="flex items-center gap-2 text-primary/30 group-hover:text-primary transition-colors px-3 py-2 rounded-lg hover:bg-primary/5">
                                     <FileDown size={20} />

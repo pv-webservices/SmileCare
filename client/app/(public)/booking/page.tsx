@@ -81,12 +81,12 @@ function BookingPageInner() {
                         Appointments
                     </a>
                     <ChevronRight size={12} />
-                    <span className="text-slate-400">New Booking</span>
+                    <span className="text-slate-700">New Booking</span>
                 </nav>
 
                 {/* Hero Header */}
                 <div className="mb-16 text-center lg:text-left">
-                    <h1 className="font-display text-5xl md:text-6xl font-black text-primary leading-tight mb-4 tracking-tight">
+                    <h1 className="font-display text-5xl md:text-6xl font-bold text-primary leading-tight mb-4 tracking-tight">
                         Concierge Booking
                     </h1>
                     <p className="text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed">
@@ -138,6 +138,10 @@ function BookingPageInner() {
                                 onSlotSelect={selectSlot}
                                 isLoadingSlots={isLoadingSlots}
                                 slotsError={slotsError}
+                                onProceed={() => {
+                                    setStep(4);
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                }}
                             />
                         )}
 

@@ -30,7 +30,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
 
                         {/* Heading */}
                         <div className="space-y-3">
-                            <h1 className="font-display text-4xl font-black text-primary">
+                            <h1 className="font-display text-4xl font-bold text-primary">
                                 Something went wrong
                             </h1>
                             <p className="text-primary/50 text-base leading-relaxed">

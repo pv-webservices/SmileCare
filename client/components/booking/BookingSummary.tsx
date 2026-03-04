@@ -65,7 +65,7 @@ export default function BookingSummary({
 
     return (
         <div className="sticky top-28 h-fit">
-            <div className="rounded-[2rem] bg-white p-8 shadow-2xl shadow-primary/5 border border-slate-50 flex flex-col gap-8">
+            <div className="rounded-[2rem] bg-white p-4 sm:p-8 shadow-2xl shadow-primary/5 border border-slate-50 flex flex-col gap-4 sm:p-8">
                 <h3 className="text-xl font-display font-bold text-slate-900 border-b border-slate-100 pb-4">
                     Booking Summary
                 </h3>
@@ -146,7 +146,7 @@ export default function BookingSummary({
 
                 {/* Price breakdown */}
                 <div className="bg-slate-50 rounded-2xl p-6 space-y-3">
-                    <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <div className="flex justify-between items-center text-xs font-bold text-slate-700 uppercase tracking-widest">
                         <span>Subtotal</span>
                         <span>
                             {parsedPrice > 0
@@ -158,7 +158,7 @@ export default function BookingSummary({
                         <span className="font-display font-bold text-xl text-slate-900">
                             Total
                         </span>
-                        <span className="font-display text-3xl font-black text-primary">
+                        <span className="font-display text-3xl font-bold text-primary">
                             {parsedPrice > 0
                                 ? `₹${parsedPrice.toLocaleString("en-IN")}`
                                 : "—"}
@@ -188,7 +188,7 @@ export default function BookingSummary({
                     )}
                 </button>
 
-                <p className="text-center text-[10px] text-slate-400 font-medium leading-relaxed">
+                <p className="text-center text-[10px] text-slate-700 font-medium leading-relaxed">
                     By confirming, you agree to our{" "}
                     <a href="#" className="underline">
                         Cancellation Policy

@@ -19,6 +19,7 @@ import {
     Slot,
 } from "@/lib/booking.api";
 import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
 import type { PatientDetails } from "@/components/booking/PatientDetailsStep";
 
 
@@ -65,6 +66,8 @@ interface BookingState {
     handleHoldExpired: () => void;
     handleConfirm: () => Promise<void>;
     resetBooking: () => void;
+    maxReachedStep: number;
+    goToStep: (step: number) => void;
 }
 
 // ── Context ────────────────────────────────────────────────────────────────
@@ -76,9 +79,24 @@ const BookingContext = createContext<BookingState | null>(null);
 export function BookingProvider({ children }: { children: ReactNode }) {
     const router = useRouter();
     const { success, error: toastError, warning } = useToast();
+    const { isAuthenticated } = useAuth();
 
     // Step
     const [step, setStep] = useState(1);
+    const [maxReachedStep, setMaxReachedStep] = useState(1);
+
+    const advanceToStep = useCallback((newStep: number) => {
+        setStep(newStep);
+        setMaxReachedStep(prev => Math.max(prev, newStep));
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }, []);
+
+    const goToStep = useCallback((targetStep: number) => {
+        if (targetStep <= maxReachedStep) {
+            setStep(targetStep);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    }, [maxReachedStep]);
 
     // Catalog
     const [treatments, setTreatments] = useState<Treatment[]>([]);
@@ -130,6 +148,29 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         loadCatalog();
     }, []);
 
+    // ── Restore Pending Booking after login ───────────────────────────────
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            const pending = sessionStorage.getItem('pendingBooking');
+            if (pending) {
+                try {
+                    const bookingData = JSON.parse(pending);
+                    if (bookingData.treatment) setSelectedTreatment(bookingData.treatment);
+                    if (bookingData.specialist) setSelectedSpecialist(bookingData.specialist);
+                    if (bookingData.date) setSelectedDate(new Date(bookingData.date));
+                    if (bookingData.timeSlot) setSelectedSlot(bookingData.timeSlot);
+                    if (bookingData.patientDetails) setPatientDetails(bookingData.patientDetails);
+                    sessionStorage.removeItem('pendingBooking');
+                    setStep(5);
+                    setMaxReachedStep(5);
+                } catch (e) {
+                    console.error('Failed to restore pending booking', e);
+                }
+            }
+        }
+    }, [isAuthenticated]);
+
     // ── Fetch slots when specialist + date both selected ──────────────────
 
     useEffect(() => {
@@ -180,6 +221,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         setSelectedSlot(null);
         setHoldExpiresAt(null);
         setSlots([]);
+        setMaxReachedStep(2);
         setStep(2);
         window.scrollTo({ top: 0, behavior: "smooth" });
     }, []);
@@ -191,6 +233,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         setSelectedSlot(null);
         setHoldExpiresAt(null);
         setSlots([]);
+        setMaxReachedStep(3);
         setStep(3);
         window.scrollTo({ top: 0, behavior: "smooth" });
     }, []);
@@ -235,17 +278,14 @@ export function BookingProvider({ children }: { children: ReactNode }) {
                     );
                 }
             }
-            setStep(4);
-            window.scrollTo({ top: 0, behavior: "smooth" });
         },
         [sessionId, toastError, warning]
     );
 
     const selectPatientDetails = useCallback((details: PatientDetails) => {
         setPatientDetails(details);
-        setStep(5);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-    }, []);
+        advanceToStep(5);
+    }, [advanceToStep]);
 
     const handleHoldExpired = useCallback(() => {
         setHoldExpiresAt(null);
@@ -265,6 +305,18 @@ export function BookingProvider({ children }: { children: ReactNode }) {
             !selectedSlot
         )
             return;
+
+        if (!isAuthenticated) {
+            sessionStorage.setItem('pendingBooking', JSON.stringify({
+                treatment: selectedTreatment,
+                specialist: selectedSpecialist,
+                date: selectedDate,
+                timeSlot: selectedSlot,
+                patientDetails: patientDetails,
+            }));
+            window.location.href = '/login?redirect=/booking';
+            return;
+        }
 
         setIsSubmitting(true);
         setSubmissionError(null);
@@ -371,6 +423,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
                 handleHoldExpired,
                 handleConfirm,
                 resetBooking,
+                maxReachedStep,
+                goToStep,
             }}
         >
             {children}

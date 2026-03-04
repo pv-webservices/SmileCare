@@ -26,7 +26,7 @@ const FaqSection = () => {
 
     return (
         <section className="py-24 bg-white">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-4 sm:px-8">
                 <div className="text-center mb-16">
                     <span className="text-primary font-bold tracking-widest uppercase text-sm block mb-4">Common Questions</span>
                     <h2 className="text-3xl md:text-5xl font-display font-bold text-navy-deep mb-6">
@@ -42,7 +42,7 @@ const FaqSection = () => {
                         >
                             <button
                                 onClick={() => setOpenIdx(openIdx === idx ? null : idx)}
-                                className="w-full px-8 py-6 text-left flex justify-between items-center gap-4"
+                                className="w-full px-4 sm:px-8 py-6 text-left flex justify-between items-center gap-4"
                             >
                                 <span className={`text-lg font-bold transition-colors ${openIdx === idx ? 'text-primary' : 'text-navy-deep'}`}>
                                     {faq.question}
@@ -57,7 +57,7 @@ const FaqSection = () => {
                             <div
                                 className={`overflow-hidden transition-all duration-500 ease-in-out ${openIdx === idx ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}
                             >
-                                <div className="px-8 pb-8 text-gray-600 leading-relaxed border-t border-gray-100 pt-6">
+                                <div className="px-4 sm:px-8 pb-8 text-gray-600 leading-relaxed border-t border-gray-100 pt-6">
                                     {faq.answer}
                                 </div>
                             </div>
@@ -65,9 +65,9 @@ const FaqSection = () => {
                     ))}
                 </div>
 
-                <div className="mt-12 p-8 bg-navy-deep rounded-3xl text-center text-white">
+                <div className="mt-12 p-4 sm:p-8 bg-navy-deep rounded-3xl text-center text-white">
                     <p className="text-lg mb-6">Still have questions? We're here to help.</p>
-                    <button className="bg-accent-gold text-navy-deep px-8 py-3 rounded-full font-bold hover:bg-white transition-all shadow-lg active:scale-95">
+                    <button className="bg-accent-gold text-navy-deep px-4 sm:px-8 py-3 rounded-full font-bold hover:bg-white transition-all shadow-lg active:scale-95">
                         Contact Our Support
                     </button>
                 </div>
