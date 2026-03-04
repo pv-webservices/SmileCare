@@ -322,11 +322,7 @@ export async function verifyMockPayment(
     }
 
     mockAmount = mockOrder.amount;
-  }    if (Date.now() - mockOrder.createdAt.getTime() > ORDER_TTL_MS) {
-        pendingOrders.delete(orderId);
-        throw new PaymentError('ORDER_EXPIRED', 'Payment order has expired');
-    }
-
+  
     // ── Check for idempotent payment (already captured) ─────────────────────
     const existingPayment = await prisma.payment.findFirst({
         where: { razorpayOrderId: orderId },
