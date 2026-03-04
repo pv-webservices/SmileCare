@@ -1,9 +1,5 @@
 import { notFound } from "next/navigation";
-import { getTreatmentBySlug, getAllTreatmentSlugs, TREATMENTS } from "@/lib/treatments-data";
-
-export const dynamicParams = true;
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { getTreatmentBySlug, getAllTreatmentSlugs } from "@/lib/treatments-data";
 import TreatmentBreadcrumb from "@/components/treatment-detail/TreatmentBreadcrumb";
 import TreatmentHero from "@/components/treatment-detail/TreatmentHero";
 import TreatmentProcess from "@/components/treatment-detail/TreatmentProcess";
@@ -12,17 +8,9 @@ import TreatmentFAQ from "@/components/treatment-detail/TreatmentFAQ";
 import TreatmentCTA from "@/components/treatment-detail/TreatmentCTA";
 import RelatedTreatments from "@/components/treatment-detail/RelatedTreatments";
 
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
-    try {
-        const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-        const res = await fetch(`${API}/api/treatments`, { cache: 'no-store' });
-        if (res.ok) {
-            const data = await res.json();
-            if (Array.isArray(data) && data.length > 0) {
-                return data.map((t: { slug: string }) => ({ slug: t.slug }));
-            }
-        }
-    } catch { }
     return getAllTreatmentSlugs().map(({ slug }) => ({ slug }));
 }
 
@@ -51,35 +39,13 @@ export default async function TreatmentDetailPage({
     params: Promise<{ slug: string }>;
 }) {
     const { slug } = await params;
-    const staticTreatment = getTreatmentBySlug(slug);
+    const treatment = getTreatmentBySlug(slug);
 
-    if (!staticTreatment) notFound();
-
-    let apiTreatment: any = null;
-    try {
-        const res = await fetch(`${API}/api/treatments/${slug}`,
-            { next: { revalidate: 300 } }
-        );
-        if (res.ok) apiTreatment = await res.json();
-    } catch { /* use static only adding to push*/ }
-
-    const treatment = {
-        ...staticTreatment,
-        ...(apiTreatment ? {
-            title: apiTreatment.name || staticTreatment.title,
-            description: apiTreatment.description || staticTreatment.description,
-            startingPrice: apiTreatment.priceRange || staticTreatment.startingPrice,
-            heroImage: apiTreatment.imageUrl || staticTreatment.heroImage,
-        } : {}),
-    };
-
-    // Resolve related treatments
-    const related = treatment.relatedSlugs
-        .map((s: string) => TREATMENTS.find((t) => t.slug === s))
-        .filter(Boolean) as typeof TREATMENTS;
+    if (!treatment) notFound();
 
     return (
-        <main className="min-h-screen bg-white">
+        <main>
+            <TreatmentBreadcrumb title={treatment.title} />
             <TreatmentHero
                 title={treatment.title}
                 description={treatment.description}
@@ -89,7 +55,6 @@ export default async function TreatmentDetailPage({
                 startingPrice={treatment.startingPrice}
                 slug={treatment.slug}
             />
-            <TreatmentBreadcrumb title={treatment.title} />
             <TreatmentProcess steps={treatment.process} />
             <TreatmentQuality
                 title={treatment.qualityTitle}
@@ -99,7 +64,9 @@ export default async function TreatmentDetailPage({
                 features={treatment.qualityFeatures}
             />
             <TreatmentFAQ faqs={treatment.faq} />
-            <RelatedTreatments treatments={related} />
+            <RelatedTreatments treatments={treatment.relatedSlugs
+                .map((s: string) => getAllTreatmentSlugs().find((t) => t.slug === s))
+                .filter(Boolean) as any} />
             <TreatmentCTA title={treatment.title} />
         </main>
     );
