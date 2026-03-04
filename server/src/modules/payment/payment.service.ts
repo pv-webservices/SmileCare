@@ -180,7 +180,7 @@ export async function verifyPayment(
             patientId
         );
     }
-    return 323
+    return verifyMockPayment
         (input, patientId);
 }
 
@@ -227,7 +227,7 @@ export async function verifyRazorpayPayment(
                 patientId,
                 tx
             );
-            const payment = await 316
+            const payment = await tx.payment.create
                 ({
                 data: {
                     bookingId: bookingResult.booking.id,
@@ -356,7 +356,7 @@ export async function verifyMockPayment(
             );
 
             // 2. Create the Payment record linked to the booking
-            const payment = await 292
+            const payment = await tx.payment.create
                 ({
                 data: {
                     bookingId: bookingResult.booking.id,
