@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-
+// Nothing to commit
 const HeroSection = () => {
     return (
         <section className="relative min-h-[80vh] flex items-center pt-20 overflow-hidden">
