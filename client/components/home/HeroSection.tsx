@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
 
 const HeroSection = () => {
   return (
@@ -30,16 +34,20 @@ const HeroSection = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <Link 
               href="/booking" 
-              className="bg-primary text-white px-6 sm:px-8 py-4 rounded-full font-bold text-base sm:text-lg hover:bg-white hover:text-primary transition-all duration-300 text-center shadow-lg shadow-primary/20"
+              className="bg-primary text-white active:scale-95 active:opacity-90 px-6 sm:px-8 py-4 rounded-full font-bold text-base sm:text-lg hover:bg-white hover:text-primary transition-all duration-300 text-center shadow-lg shadow-primary/20"
             >
               Book Appointment
             </Link>
             <Link 
               href="/treatments" 
-              className="bg-transparent border-2 border-accent-gold text-accent-gold px-6 sm:px-8 py-4 rounded-full font-bold text-base sm:text-lg hover:bg-accent-gold hover:text-white transition-all duration-300 text-center"
+              className="bg-transparent border-2 border-accent-gold text-accent-gold active:scale-95 active:opacity-90 px-6 sm:px-8 py-4 rounded-full font-bold text-base sm:text-lg hover:bg-accent-gold hover:text-white transition-all duration-300 text-center"
             >
               Our Services
             </Link>
+        
+      
+    
+            
           </div>
         </div>
       </div>
