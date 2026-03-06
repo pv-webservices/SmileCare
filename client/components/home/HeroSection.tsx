@@ -45,14 +45,16 @@ const HeroSection = () => {
               Our Services
             </Link>
           </div>
+
+          <div className="mt-6 grid grid-cols-3 gap-3 sm:gap-6 max-w-md">
+            <Stat label="Happy Customers" value={10000} suffix="+" />
+            <Stat label="Star Rating" value={4.9} decimals={1} suffix="/5" />
+            <Stat label="Experience" value={15} suffix="+ Years" />
+          </div>
+
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-3 sm:gap-6 max-w-md">
-        <Stat label="Happy Customers" value={10000} suffix="+" />
-        <Stat label="Star Rating" value={4.9} decimals={1} suffix="/5" />
-        <Stat label="Experience" value={15} suffix="+ Years" />
-      </div>
 
 
     </section>
