@@ -7,7 +7,7 @@ interface TreatmentsSearchProps {
 
 const TreatmentsSearch = ({ searchQuery, setSearchQuery }: TreatmentsSearchProps) => {
     return (
-        <div className="w-full max-w-xs flex-shrink-0">
+        <div className="w-full max-w-lg flex-shrink-0">
             <label className="relative flex items-center h-14 w-full shadow-sm">
                 <div className="absolute left-4 text-primary pointer-events-none">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
