@@ -184,7 +184,7 @@ export default function ChatWidget() {
     <>
       {/* -- Chat Panel ---------------------------------- */}
       {isOpen && (
-        <div className="fixed bottom-24 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[400px] h-[calc(100vh-140px)] max-h-[600px] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-24 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[400px] h-[calc(100vh-140px)] max-h-[500px] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
           <div className="bg-primary p-5 text-white flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
