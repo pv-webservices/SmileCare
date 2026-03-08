@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { LogIn, Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
+import Image from "next/image";
 
 function LoginForm() {
-  const { login } = useAuth();
+  const { login, getLoginCredentials, loginWithGoogle, loginWithApple } = useAuth();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/dashboard";
   const prefillEmail = searchParams.get("email") || "";
@@ -20,6 +21,15 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [noAccount, setNoAccount] = useState(false);
+
+  // Auto-fill credentials from registration
+  useEffect(() => {
+    const credentials = getLoginCredentials();
+    if (credentials) {
+      setEmail(credentials.email);
+      setPassword(credentials.password);
+    }
+  }, [getLoginCredentials]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,171 +44,233 @@ function LoginForm() {
         msg.toLowerCase().includes("not found") ||
         msg.toLowerCase().includes("no account") ||
         msg.toLowerCase().includes("does not exist") ||
-        msg.toLowerCase().includes("invalid credentials")
+        msg.toLowerCase().includes("no user")
       ) {
         setNoAccount(true);
-        setError("No account found with these credentials.");
       } else {
-        setError(msg || "Invalid credentials. Please try again.");
+        setError(msg || "Login failed");
       }
+    } finally {
       setLoading(false);
     }
   };
 
-  const signupHref = `/signup${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`;
+  const handleGoogleLogin = () => {
+    loginWithGoogle();
+  };
+
+  const handleAppleLogin = () => {
+    loginWithApple();
+  };
 
   return (
-    <main className="min-h-[calc(100vh-5rem)] flex items-center justify-center bg-background-light px-4 py-16">
-      <div className="max-w-md w-full bg-pearl rounded-2xl shadow-xl border border-primary/10 p-10">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-block text-3xl font-display font-bold text-primary">
-            SmileCare<span className="text-accent-gold">.</span>
-          </Link>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
+            <LogIn className="h-6 w-6 text-white" />
+          </div>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">Welcome back</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Sign in to your SmileCare account
+          </p>
         </div>
 
-        {/* Title */}
-        <h1 className="text-2xl font-display font-bold text-primary mb-1">Welcome Back</h1>
-        <p className="text-slate-500 text-sm mb-6">Premium dental experience awaits.</p>
-
-        {/* Registration success banner */}
         {justRegistered && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
-            <CheckCircle2 size={18} className="text-green-600 mt-0.5 shrink-0" />
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
+            <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm font-bold text-green-700">Account created successfully!</p>
-              <p className="text-xs text-green-600 mt-0.5">Please sign in with your credentials to continue.</p>
+              <p className="text-sm font-medium text-green-800">
+                Registration successful!
+              </p>
+              <p className="text-sm text-green-700 mt-1">
+                Your account has been created. Please log in with your credentials.
+              </p>
             </div>
           </div>
         )}
 
-        {/* Context message for payment redirect */}
-        {redirectTo.startsWith("/payment") && (
-          <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-xl text-sm text-primary font-medium">
-            🔒 Please sign in to complete your payment
-          </div>
-        )}
-
-        {/* No-account message with animated link */}
-        {noAccount && (
-          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-            <p className="font-semibold mb-1">Account not found</p>
-            <p>
-              You don&apos;t have an account yet.{" "}
-              <Link
-                href={signupHref}
-                className="font-bold text-primary underline underline-offset-2 animate-pulse hover:animate-none hover:text-primary/80 transition-colors"
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Create an account
-              </Link>
-              {" "}to get started.
-            </p>
-          </div>
-        )}
-
-        {/* Error (non no-account errors) */}
-        {error && !noAccount && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
-            {error}
-          </div>
-        )}
-
-        {/* Google & Apple login */}
-        <div className="flex flex-col gap-3 mb-6">
-          <a
-            href="#"
-            onClick={(e) => { e.preventDefault(); alert("Google login coming soon — configure NEXT_PUBLIC_GOOGLE_CLIENT_ID in your env."); }}
-            className="flex items-center justify-center gap-3 w-full border border-slate-200 rounded-xl py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition-all"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Continue with Google
-          </a>
-          <a
-            href="#"
-            onClick={(e) => { e.preventDefault(); alert("Apple login coming soon — configure Apple OAuth credentials."); }}
-            className="flex items-center justify-center gap-3 w-full border border-slate-200 rounded-xl py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition-all"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-            </svg>
-            Continue with Apple
-          </a>
-        </div>
-
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex-1 h-px bg-slate-200" />
-          <span className="text-xs text-slate-400 font-medium">or sign in with email</span>
-          <div className="flex-1 h-px bg-slate-200" />
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-primary/40 uppercase tracking-wider mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoFocus={!!prefillEmail}
-              className="w-full border border-primary/20 rounded-xl px-4 py-3 bg-white text-primary font-medium focus:ring-2 focus:ring-primary/40 outline-none transition-all placeholder:text-primary/30"
-              placeholder="alex@smilecare.com"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-primary/40 uppercase tracking-wider mb-2">Password</label>
-            <div className="relative">
+                Email address
+              </label>
               <input
-                type={showPw ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
                 required
-                autoFocus={!prefillEmail}
-                className="w-full border border-primary/20 rounded-xl px-4 py-3 pr-12 bg-white text-primary font-medium focus:ring-2 focus:ring-primary/40 outline-none transition-all placeholder:text-primary/30"
-                placeholder="••••••••"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm"
+                placeholder="you@example.com"
               />
-              <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-primary/30 hover:text-primary"
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
-                {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPw ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm pr-10"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  {showPw ? (
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-primary text-white rounded-xl py-3.5 font-bold text-base shadow-lg shadow-primary/20 hover:opacity-90 hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-60"
-          >
-            {loading ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {noAccount && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-sm text-yellow-800">
+                User not found. Please{" "}
+                <Link
+                  href="/signup"
+                  className="font-bold underline cursor-pointer animate-pulse hover:text-blue-600 transition-colors"
+                >
+                  create an account
+                </Link>{" "}
+                first.
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <Link
+                href="/forgot-password"
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                Forgot your password?
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign in"
+              )}
+            </button>
+          </div>
+
+          {/* OAuth Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          {/* OAuth Buttons */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="w-full inline-flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+              Google
+            </button>
+
+            <button
+              type="button"
+              onClick={handleAppleLogin}
+              className="w-full inline-flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-lg shadow-sm bg-black text-sm font-medium text-white hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+              </svg>
+              Apple
+            </button>
+          </div>
         </form>
 
-        {/* Footer */}
-        <p className="text-center text-sm text-slate-500 mt-6">
-          Don&apos;t have an account?{" "}
-          <Link
-            href={signupHref}
-            className="font-bold text-primary hover:underline transition-all"
-          >
-            Create one
-          </Link>
-        </p>
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
+            Don't have an account?{" "}
+            <Link
+              href="/signup"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              Sign up
+            </Link>
+          </p>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );
