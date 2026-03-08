@@ -16,18 +16,18 @@ export type ToastType = "success" | "error" | "warning" | "info";
 export interface Toast {
     id: string;
     type: ToastType;
-    title: string;
-    message?: string;
-    duration?: number;   // ms, default 4000, 0 = persistent
+    title: ReactNode;        // ✅ changed from string to ReactNode
+    message?: ReactNode;     // ✅ changed from string to ReactNode
+    duration?: number;
 }
 
 interface ToastContextType {
     toasts: Toast[];
     toast: (options: Omit<Toast, "id">) => string;
-    success: (title: string, message?: string) => string;
-    error: (title: string, message?: string) => string;
-    warning: (title: string, message?: string) => string;
-    info: (title: string, message?: string) => string;
+    success: (title: ReactNode, message?: ReactNode) => string;   // ✅
+    error: (title: ReactNode, message?: ReactNode) => string;     // ✅
+    warning: (title: ReactNode, message?: ReactNode) => string;   // ✅
+    info: (title: ReactNode, message?: ReactNode) => string;      // ✅
     dismiss: (id: string) => void;
     dismissAll: () => void;
 }
@@ -36,7 +36,7 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | null>(null);
 
-// ── Icons (inline SVG — no extra deps) ─────────────────────────────────────
+// ── Icons ──────────────────────────────────────────────────────────────────
 
 const ICONS: Record<ToastType, string> = {
     success: "check_circle",
@@ -101,13 +101,13 @@ function ToastItem({
 
             {/* Body */}
             <div className="flex-1 min-w-0">
-                <p className={`text-sm font-bold leading-snug ${c.title}`}>
-                    {toast.title}
-                </p>
+                <div className={`text-sm font-bold leading-snug ${c.title}`}>
+                    {toast.title}  {/* ✅ changed <p> to <div> to allow JSX children */}
+                </div>
                 {toast.message && (
-                    <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                        {toast.message}
-                    </p>
+                    <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                        {toast.message}  {/* ✅ changed <p> to <div> to allow JSX children */}
+                    </div>
                 )}
             </div>
 
@@ -177,7 +177,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             const duration = options.duration ?? 4000;
 
             setToasts((prev) => {
-                // Max 5 toasts at once — drop oldest if exceeded
                 const next = [...prev, { ...options, id }];
                 return next.length > 5 ? next.slice(next.length - 5) : next;
             });
@@ -194,19 +193,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
     // Convenience helpers
     const success = useCallback(
-        (title: string, message?: string) => toast({ type: "success", title, message }),
+        (title: ReactNode, message?: ReactNode) => toast({ type: "success", title, message }),
         [toast]
     );
     const error = useCallback(
-        (title: string, message?: string) => toast({ type: "error", title, message, duration: 6000 }),
+        (title: ReactNode, message?: ReactNode) => toast({ type: "error", title, message, duration: 6000 }),
         [toast]
     );
     const warning = useCallback(
-        (title: string, message?: string) => toast({ type: "warning", title, message, duration: 5000 }),
+        (title: ReactNode, message?: ReactNode) => toast({ type: "warning", title, message, duration: 5000 }),
         [toast]
     );
     const info = useCallback(
-        (title: string, message?: string) => toast({ type: "info", title, message }),
+        (title: ReactNode, message?: ReactNode) => toast({ type: "info", title, message }),
         [toast]
     );
 
