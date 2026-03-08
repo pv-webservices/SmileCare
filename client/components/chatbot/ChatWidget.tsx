@@ -238,24 +238,22 @@ export default function ChatWidget() {
                       <span className="font-semibold">Emergency Detected</span>
                     </div>
                   )}
-                  <ReactMarkdown
-                    className="prose prose-sm max-w-none"
-                    components={{
-                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                      a: ({ href, children }) => (
-                        <a
-                          href={href}
-                          className="underline hover:no-underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {children}
-                        </a>
-                      ),
-                    }}
-                  >
-                    {msg.content}
-                  </ReactMarkdown>
+                  // ✅ AFTER (works with react-markdown v9+)
+<div className="prose prose-sm max-w-none">
+  <ReactMarkdown
+    components={{
+      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+      a: ({ href, children }) => (
+        <a href={href} className="underline hover:no-underline" target="_blank" rel="noopener noreferrer">
+          {children}
+        </a>
+      ),
+    }}
+  >
+    {msg.content}
+  </ReactMarkdown>
+</div>
+
                   {msg.cta && (
                     <button
                       onClick={() => handleCTAClick(msg.cta!.href)}
