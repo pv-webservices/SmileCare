@@ -9,6 +9,7 @@ import {
     ChevronRight, Clock, Smartphone, Building2, Wallet, AlertTriangle
 } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
 import { addLocalBooking } from "@/lib/booking-storage";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -67,6 +68,7 @@ export default function PaymentPage() {
     const [activeTab, setActiveTab] = useState<PaymentTab>("card");
     const [processingMsg, setProcessingMsg] = useState(0);
     const { success, error: toastError, warning } = useToast();
+    const { isAuthenticated, isLoading } = useAuth();
 
     // Timer
     const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes
@@ -108,6 +110,14 @@ export default function PaymentPage() {
             // Toast shown after mount
         }
     }, []);
+
+    useEffect(() => {
+        if (isLoading) return;
+        if (!isAuthenticated) {
+            const callbackUrl = `/payment`;
+            router.replace(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+        }
+    }, [isAuthenticated, isLoading, router]);
 
     useEffect(() => {
         if (pageState === "error") {
@@ -303,6 +313,7 @@ export default function PaymentPage() {
                                 });
 
                                 sessionStorage.removeItem('smilecare_payment');
+                                sessionStorage.removeItem('pendingBooking');
                                 success('Payment Successful!',
                                     'Your appointment has been confirmed.');
                                 setPageState('success');
@@ -412,6 +423,7 @@ export default function PaymentPage() {
                 addLocalBooking(enrichedBooking);
                 // Clear the payment intent — it's been consumed
                 sessionStorage.removeItem("smilecare_payment");
+                sessionStorage.removeItem("pendingBooking");
 
                 success("Payment Successful!", "Your appointment has been confirmed.");
             } else {
@@ -449,6 +461,7 @@ export default function PaymentPage() {
 
             addLocalBooking(enrichedBooking);
             sessionStorage.removeItem("smilecare_payment");
+            sessionStorage.removeItem("pendingBooking");
         }
 
         setPageState("success");

@@ -23,7 +23,7 @@ interface AuthContextType {
   register: (name: string, email: string, phone: string, password: string) => Promise<{ success: boolean; email?: string; password?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<User | null>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: (callbackUrl?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -72,19 +72,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
 
       if (!res.ok) {
-        const msg = (data.message || data.error || "Login failed").toLowerCase();
+        const apiMessage = data.message || data.error || "Login failed";
+        const msg = String(apiMessage).toLowerCase();
 
-        if (msg.includes("not found") || msg.includes("no user") || msg.includes("does not exist") || msg.includes("invalid") || msg.includes("incorrect")) {
-          if (msg.includes("not found") || msg.includes("no user") || msg.includes("does not exist")) {
-            throw { type: 'USER_NOT_FOUND', message: msg };
-          } else {
-            throw { type: 'INVALID_CREDENTIALS', message: 'Incorrect password. Please try again.' };
-          }
+        if (res.status === 404 || msg.includes("not found") || msg.includes("no user") || msg.includes("does not exist")) {
+          throw { type: 'USER_NOT_FOUND', message: apiMessage };
         }
-        throw new Error(msg);
+
+        if (res.status === 401 || msg.includes("incorrect") || msg.includes("invalid")) {
+          throw { type: 'INVALID_CREDENTIALS', message: apiMessage };
+        }
+
+        throw new Error(apiMessage);
       }
 
-      setUser(data.user);
+      if (data.token && typeof window !== "undefined") {
+        localStorage.setItem("smilecare_token", data.token);
+      }
+
+      await refreshUser();
 
       // Clear any pre-fill credentials
       if (typeof window !== 'undefined') {
@@ -152,12 +158,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (callbackUrl = "/dashboard") => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?callbackUrl=${encodeURIComponent(callbackUrl)}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
