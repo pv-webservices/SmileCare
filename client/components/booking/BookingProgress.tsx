@@ -5,9 +5,9 @@ import {
     UserRound,
     CalendarDays,
     ClipboardList,
-    CheckCircle2,
     type LucideIcon,
 } from "lucide-react";
+import { useBooking } from "@/context/BookingContext";
 
 interface Step {
     id: number;
@@ -20,10 +20,7 @@ const STEPS: Step[] = [
     { id: 2, name: "Specialist", Icon: UserRound },
     { id: 3, name: "Schedule", Icon: CalendarDays },
     { id: 4, name: "Details", Icon: ClipboardList },
-    { id: 5, name: "Confirm", Icon: CheckCircle2 },
 ];
-
-import { useBooking } from "@/context/BookingContext";
 
 interface BookingProgressProps {
     currentStep: number;
@@ -46,7 +43,6 @@ export default function BookingProgress({ currentStep }: BookingProgressProps) {
                             key={step.id}
                             className="flex flex-col items-center relative group flex-1"
                         >
-                            {/* Connector line — spans from previous step */}
                             {idx > 0 && (
                                 <div
                                     className={`absolute top-5 right-1/2 w-full h-[3px] -z-10 transition-colors duration-500 ${isUpcoming ? "bg-slate-100" : "bg-primary"
@@ -54,7 +50,6 @@ export default function BookingProgress({ currentStep }: BookingProgressProps) {
                                 />
                             )}
 
-                            {/* Icon circle / Button */}
                             <button
                                 type="button"
                                 onClick={() => isAccessible && goToStep(step.id)}
@@ -69,21 +64,16 @@ export default function BookingProgress({ currentStep }: BookingProgressProps) {
                                     }`}
                                 aria-label={`Go to step ${step.name}`}
                             >
-                                {isCompleted ? (
-                                    <CheckCircle2 size={20} />
-                                ) : (
-                                    <step.Icon
-                                        size={18}
-                                        className={isActive || isCompleted ? "opacity-100" : "opacity-40"}
-                                    />
-                                )}
+                                <step.Icon
+                                    size={18}
+                                    className={isActive || isCompleted ? "opacity-100" : "opacity-40"}
+                                />
                             </button>
 
-                            {/* Label */}
                             <span
                                 className={`mt-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] transition-colors duration-500 whitespace-nowrap ${isActive || isCompleted
-                                    ? "text-primary"
-                                    : "text-slate-700"
+                                        ? "text-primary"
+                                        : "text-slate-700"
                                     }`}
                             >
                                 {step.name}

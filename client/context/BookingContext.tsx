@@ -14,91 +14,62 @@ import {
     getSpecialists,
     getSlots,
     holdSlot,
-    Treatment,
-    Specialist,
-    Slot,
+    type Treatment,
+    type Specialist,
+    type Slot,
 } from "@/lib/booking.api";
 import { useToast } from "@/context/ToastContext";
-import { useAuth } from "@/context/AuthContext";
 import type { PatientDetails } from "@/components/booking/PatientDetailsStep";
+import {
+    getPendingBooking,
+    setPendingBooking,
+    setPaymentSession,
+    clearPaymentSession,
+    clearPendingBooking,
+} from "@/lib/booking-session";
 
-
-
-// ── State Shape ────────────────────────────────────────────────────────────
+function createSessionId() {
+    return `sess_${Math.random().toString(36).substring(2, 10)}`;
+}
 
 interface BookingState {
-    // Step navigation
     step: number;
     setStep: (step: number) => void;
-
-    // Catalog data
     treatments: Treatment[];
     specialists: Specialist[];
     slots: Slot[];
-
-    // Loading / error states
     isLoadingCatalog: boolean;
     catalogError: string | null;
     isLoadingSlots: boolean;
     slotsError: string | null;
-
-    // Selections
     selectedTreatment: Treatment | null;
     selectedSpecialist: Specialist | null;
     selectedDate: Date | null;
     selectedSlot: Slot | null;
     holdExpiresAt: Date | null;
     patientDetails: PatientDetails | null;
-
-    // Session
     sessionId: string;
-
-    // Submission
     isSubmitting: boolean;
     submissionError: string | null;
-
-    // Actions
     selectTreatment: (treatment: Treatment) => void;
     selectSpecialist: (specialist: Specialist) => void;
     selectDate: (date: Date) => void;
     selectSlot: (slot: Slot) => Promise<void>;
-    selectPatientDetails: (details: PatientDetails) => void;
+    proceedToPayment: (details: PatientDetails) => Promise<void>;
     handleHoldExpired: () => void;
-    handleConfirm: () => Promise<void>;
     resetBooking: () => void;
     maxReachedStep: number;
     goToStep: (step: number) => void;
 }
 
-// ── Context ────────────────────────────────────────────────────────────────
-
 const BookingContext = createContext<BookingState | null>(null);
-
-// ── Provider ───────────────────────────────────────────────────────────────
 
 export function BookingProvider({ children }: { children: ReactNode }) {
     const router = useRouter();
-    const { success, error: toastError, warning } = useToast();
-    const { isAuthenticated } = useAuth();
+    const { error: toastError, warning } = useToast();
 
-    // Step
     const [step, setStep] = useState(1);
     const [maxReachedStep, setMaxReachedStep] = useState(1);
-
-    const advanceToStep = useCallback((newStep: number) => {
-        setStep(newStep);
-        setMaxReachedStep(prev => Math.max(prev, newStep));
-        window.scrollTo({ top: 0, behavior: "smooth" });
-    }, []);
-
-    const goToStep = useCallback((targetStep: number) => {
-        if (targetStep <= maxReachedStep) {
-            setStep(targetStep);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-        }
-    }, [maxReachedStep]);
-
-    // Catalog
     const [treatments, setTreatments] = useState<Treatment[]>([]);
     const [specialists, setSpecialists] = useState<Specialist[]>([]);
     const [slots, setSlots] = useState<Slot[]>([]);
@@ -106,25 +77,22 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
     const [slotsError, setSlotsError] = useState<string | null>(null);
-
-    // Selections
     const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
     const [selectedSpecialist, setSelectedSpecialist] = useState<Specialist | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
     const [patientDetails, setPatientDetails] = useState<PatientDetails | null>(null);
     const [holdExpiresAt, setHoldExpiresAt] = useState<Date | null>(null);
-
-    // Session ID — stable per page load
-    const [sessionId] = useState(
-        () => `sess_${Math.random().toString(36).substring(2, 10)}`
-    );
-
-    // Submission
+    const [sessionId, setSessionId] = useState(createSessionId);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-    // ── Load catalog on mount ──────────────────────────────────────────────
+    const goToStep = useCallback((targetStep: number) => {
+        if (targetStep <= maxReachedStep) {
+            setStep(targetStep);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    }, [maxReachedStep]);
 
     useEffect(() => {
         const loadCatalog = async () => {
@@ -145,33 +113,47 @@ export function BookingProvider({ children }: { children: ReactNode }) {
                 setIsLoadingCatalog(false);
             }
         };
-        loadCatalog();
-    }, []);
-
-    // ── Restore Pending Booking after login ───────────────────────────────
+        void loadCatalog();
+    }, [toastError]);
 
     useEffect(() => {
-        if (isAuthenticated) {
-            const pending = sessionStorage.getItem('pendingBooking');
-            if (pending) {
-                try {
-                    const bookingData = JSON.parse(pending);
-                    if (bookingData.treatment) setSelectedTreatment(bookingData.treatment);
-                    if (bookingData.specialist) setSelectedSpecialist(bookingData.specialist);
-                    if (bookingData.date) setSelectedDate(new Date(bookingData.date));
-                    if (bookingData.timeSlot) setSelectedSlot(bookingData.timeSlot);
-                    if (bookingData.patientDetails) setPatientDetails(bookingData.patientDetails);
-                    sessionStorage.removeItem('pendingBooking');
-                    setStep(5);
-                    setMaxReachedStep(5);
-                } catch (e) {
-                    console.error('Failed to restore pending booking', e);
-                }
-            }
-        }
-    }, [isAuthenticated]);
+        const pending = getPendingBooking();
+        if (!pending) return;
 
-    // ── Fetch slots when specialist + date both selected ──────────────────
+        try {
+            if (pending.treatment) {
+                setSelectedTreatment(pending.treatment as Treatment);
+            }
+            if (pending.specialist) {
+                setSelectedSpecialist(pending.specialist as Specialist);
+            }
+            if (pending.date) {
+                setSelectedDate(new Date(pending.date));
+            }
+            if (pending.timeSlot) {
+                setSelectedSlot({
+                    id: pending.timeSlot.id,
+                    startTime: pending.timeSlot.startTime,
+                    endTime: pending.timeSlot.endTime || "",
+                    isAvailable: true,
+                });
+            }
+            if (pending.patientDetails) {
+                setPatientDetails(pending.patientDetails);
+            }
+            if (pending.holdExpiresAt) {
+                setHoldExpiresAt(new Date(pending.holdExpiresAt));
+            }
+            if (pending.sessionId) {
+                setSessionId(pending.sessionId);
+            }
+            const restoredStep = Math.min(Math.max(Number(pending.currentStep || 4), 1), 4);
+            setStep(restoredStep);
+            setMaxReachedStep(restoredStep);
+        } catch (error) {
+            console.error("Failed to restore pending booking", error);
+        }
+    }, []);
 
     useEffect(() => {
         if (!selectedSpecialist || !selectedDate) {
@@ -180,23 +162,18 @@ export function BookingProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        // Show loading immediately for responsive feel
         setIsLoadingSlots(true);
         setSlotsError(null);
 
-        // Debounce: wait 300ms before firing the API call
-        // so rapid date clicks don't hammer the server
         const timer = setTimeout(async () => {
             try {
                 const y = selectedDate.getFullYear();
                 const mo = String(selectedDate.getMonth() + 1).padStart(2, "0");
                 const dy = String(selectedDate.getDate()).padStart(2, "0");
                 const dateStr = `${y}-${mo}-${dy}`;
-
                 const data = await getSlots(selectedSpecialist.id, dateStr);
                 setSlots(data);
             } catch (err: any) {
-                // Ignore abort errors from stale requests
                 if ((err as Error).name === "AbortError") return;
                 const msg = err.message || "Failed to load available slots.";
                 setSlotsError(msg);
@@ -206,20 +183,16 @@ export function BookingProvider({ children }: { children: ReactNode }) {
             }
         }, 300);
 
-        // Cleanup: cancel the pending fetch if date changes again
         return () => clearTimeout(timer);
-
     }, [selectedSpecialist, selectedDate, toastError]);
-
-    // ── Actions ───────────────────────────────────────────────────────────
 
     const selectTreatment = useCallback((treatment: Treatment) => {
         setSelectedTreatment(treatment);
-        // Reset downstream selections when treatment changes
         setSelectedSpecialist(null);
         setSelectedDate(null);
         setSelectedSlot(null);
         setHoldExpiresAt(null);
+        setPatientDetails(null);
         setSlots([]);
         setMaxReachedStep(2);
         setStep(2);
@@ -228,10 +201,10 @@ export function BookingProvider({ children }: { children: ReactNode }) {
 
     const selectSpecialist = useCallback((specialist: Specialist) => {
         setSelectedSpecialist(specialist);
-        // Reset downstream selections when specialist changes
         setSelectedDate(null);
         setSelectedSlot(null);
         setHoldExpiresAt(null);
+        setPatientDetails(null);
         setSlots([]);
         setMaxReachedStep(3);
         setStep(3);
@@ -240,52 +213,134 @@ export function BookingProvider({ children }: { children: ReactNode }) {
 
     const selectDate = useCallback((date: Date) => {
         setSelectedDate(date);
-        // Reset slot when date changes
         setSelectedSlot(null);
         setHoldExpiresAt(null);
     }, []);
 
-    const selectSlot = useCallback(
-        async (slot: Slot) => {
-            setSelectedSlot(slot);
-            try {
-                const res = await holdSlot(slot.id, sessionId);
-                const expires = res.expiresAt
-                    ? new Date(res.expiresAt)
-                    : res.data?.holdExpiresAt
-                        ? new Date(res.data.holdExpiresAt)
-                        : (() => {
-                            const d = new Date();
-                            d.setMinutes(d.getMinutes() + 5);
-                            return d;
-                        })();
-                setHoldExpiresAt(expires);
-            } catch (err: any) {
-                // Hold failed — set a local 5-min timer so UX isn't broken
-                const d = new Date();
-                d.setMinutes(d.getMinutes() + 5);
-                setHoldExpiresAt(d);
-                // Inform user gracefully
-                if (err?.status === 409) {
-                    toastError(
-                        "Slot No Longer Available",
-                        "This slot was just taken. Please select another time."
-                    );
-                } else {
-                    warning(
-                        "Slot Reserved Locally",
-                        "Could not confirm hold with server. Your slot is temporarily reserved."
-                    );
-                }
+    const selectSlot = useCallback(async (slot: Slot) => {
+        setSelectedSlot(slot);
+        setSubmissionError(null);
+        try {
+            const res = await holdSlot(slot.id, sessionId);
+            const expiresAt = res.expiresAt || res.data?.holdExpiresAt;
+            const nextHoldExpiry = expiresAt
+                ? new Date(expiresAt)
+                : (() => {
+                    const fallback = new Date();
+                    fallback.setMinutes(fallback.getMinutes() + 5);
+                    return fallback;
+                })();
+            setHoldExpiresAt(nextHoldExpiry);
+            setMaxReachedStep(4);
+        } catch (err: any) {
+            const fallback = new Date();
+            fallback.setMinutes(fallback.getMinutes() + 5);
+            setHoldExpiresAt(fallback);
+            setMaxReachedStep(4);
+            if (err?.status === 409) {
+                toastError(
+                    "Slot No Longer Available",
+                    "This slot was just taken. Please select another time."
+                );
+            } else {
+                warning(
+                    "Slot Reserved Locally",
+                    "Could not confirm hold with server. Your slot is temporarily reserved."
+                );
             }
-        },
-        [sessionId, toastError, warning]
-    );
+        }
+    }, [sessionId, toastError, warning]);
 
-    const selectPatientDetails = useCallback((details: PatientDetails) => {
+    const proceedToPayment = useCallback(async (details: PatientDetails) => {
+        if (!selectedTreatment || !selectedSpecialist || !selectedDate || !selectedSlot) {
+            const msg = "Please finish selecting your treatment, specialist, and slot before payment.";
+            setSubmissionError(msg);
+            toastError("Booking Incomplete", msg);
+            return;
+        }
+
+        const parsedPrice = parseInt(
+            selectedTreatment.priceRange?.replace(/[^0-9]/g, "") || "0",
+            10
+        );
+        const price = Number.isFinite(parsedPrice) && parsedPrice > 0 ? parsedPrice : 249;
+        const idempotencyKey = `${selectedSlot.id}-${Date.now()}`;
+
         setPatientDetails(details);
-        advanceToStep(5);
-    }, [advanceToStep]);
+        setIsSubmitting(true);
+        setSubmissionError(null);
+
+        try {
+            const pendingBooking = {
+                currentStep: 4,
+                callbackUrl: "/payment",
+                sessionId,
+                holdExpiresAt: holdExpiresAt?.toISOString() || null,
+                treatment: {
+                    id: selectedTreatment.id,
+                    name: selectedTreatment.name,
+                    priceRange: selectedTreatment.priceRange || `INR ${price}`,
+                },
+                specialist: {
+                    id: selectedSpecialist.id,
+                    name: selectedSpecialist.name,
+                    specialization: selectedSpecialist.specialization,
+                },
+                date: selectedDate.toISOString(),
+                timeSlot: {
+                    id: selectedSlot.id,
+                    startTime: selectedSlot.startTime,
+                    endTime: selectedSlot.endTime,
+                },
+                patientDetails: details,
+            };
+
+            setPendingBooking(pendingBooking);
+            setPaymentSession({
+                amount: price,
+                slotId: selectedSlot.id,
+                treatmentId: selectedTreatment.id,
+                sessionId,
+                idempotencyKey,
+                callbackUrl: "/payment",
+                treatment: {
+                    id: selectedTreatment.id,
+                    title: selectedTreatment.name,
+                    price,
+                    duration: 60,
+                },
+                specialist: {
+                    id: selectedSpecialist.id,
+                    name: selectedSpecialist.name,
+                    specialty: selectedSpecialist.specialization,
+                },
+                slot: {
+                    id: selectedSlot.id,
+                    startTime: selectedSlot.startTime,
+                    endTime: selectedSlot.endTime,
+                },
+                date: selectedDate.toISOString(),
+                patient: details,
+            });
+
+            router.push("/payment");
+        } catch (err: any) {
+            const msg = err.message || "Failed to proceed to payment. Please try again.";
+            setSubmissionError(msg);
+            toastError("Payment Redirect Failed", msg);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }, [
+        holdExpiresAt,
+        router,
+        selectedDate,
+        selectedSlot,
+        selectedSpecialist,
+        selectedTreatment,
+        sessionId,
+        toastError,
+    ]);
 
     const handleHoldExpired = useCallback(() => {
         setHoldExpiresAt(null);
@@ -297,91 +352,9 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         );
     }, [warning]);
 
-    const handleConfirm = useCallback(async () => {
-        if (
-            !selectedTreatment ||
-            !selectedSpecialist ||
-            !selectedDate ||
-            !selectedSlot
-        )
-            return;
-
-        if (!isAuthenticated) {
-            sessionStorage.setItem('pendingBooking', JSON.stringify({
-                treatment: selectedTreatment,
-                specialist: selectedSpecialist,
-                date: selectedDate,
-                timeSlot: selectedSlot,
-                patientDetails: patientDetails,
-            }));
-            window.location.href = '/login?redirect=/booking';
-            return;
-        }
-
-        setIsSubmitting(true);
-        setSubmissionError(null);
-
-        try {
-            const idempotencyKey = `${selectedSlot.id}-${Date.now()}`;
-
-            // Write to sessionStorage with the exact shape payment/page.tsx expects
-            sessionStorage.setItem(
-                "smilecare_payment",
-                JSON.stringify({
-                    orderId: `order_${Date.now()}`,
-                    slotId: selectedSlot.id,
-                    treatmentId: selectedTreatment.id,
-                    sessionId,
-                    idempotencyKey,
-                    treatment: {
-                        id: selectedTreatment.id,
-                        title: selectedTreatment.name,
-                        price: parseInt(
-                            selectedTreatment.priceRange?.replace(/[^0-9]/g, "") || "0"
-                        ),
-                        duration: 60,
-                    },
-                    specialist: {
-                        id: selectedSpecialist.id,
-                        name: selectedSpecialist.name,
-                        specialty: selectedSpecialist.specialization,
-                    },
-                    slot: {
-                        id: selectedSlot.id,
-                        startTime: selectedSlot.startTime,
-                    },
-                    date: selectedDate.toISOString(),
-                    patient: patientDetails
-                        ? {
-                            name: patientDetails.name,
-                            phone: patientDetails.phone,
-                            email: patientDetails.email,
-                            notes: patientDetails.notes,
-                        }
-                        : null,
-                })
-            );
-
-            router.push("/payment");
-        } catch (err: any) {
-            const msg = err.message || "Failed to proceed to payment. Please try again.";
-            setSubmissionError(msg);
-            toastError("Payment Redirect Failed", msg);
-        } finally {
-            setIsSubmitting(false);
-        }
-    }, [
-        selectedTreatment,
-        selectedSpecialist,
-        selectedDate,
-        selectedSlot,
-        sessionId,
-        router,
-        toastError,
-    ]);
-
     const resetBooking = useCallback(() => {
         setStep(1);
+        setMaxReachedStep(1);
         setSelectedTreatment(null);
         setSelectedSpecialist(null);
         setSelectedDate(null);
@@ -390,9 +363,10 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         setHoldExpiresAt(null);
         setSlots([]);
         setSubmissionError(null);
+        setSessionId(createSessionId());
+        clearPendingBooking();
+        clearPaymentSession();
     }, []);
-
-    // ── Context value ─────────────────────────────────────────────────────
 
     return (
         <BookingContext.Provider
@@ -419,9 +393,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
                 selectSpecialist,
                 selectDate,
                 selectSlot,
-                selectPatientDetails,
+                proceedToPayment,
                 handleHoldExpired,
-                handleConfirm,
                 resetBooking,
                 maxReachedStep,
                 goToStep,
@@ -431,8 +404,6 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         </BookingContext.Provider>
     );
 }
-
-// ── Hook ───────────────────────────────────────────────────────────────────
 
 export function useBooking(): BookingState {
     const ctx = useContext(BookingContext);

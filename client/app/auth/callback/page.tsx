@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+import { getPendingBooking } from "@/lib/booking-session";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function AuthCallbackPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { refreshUser } = useAuth();
     const [error, setError] = useState<string | null>(null);
 
@@ -34,77 +36,33 @@ export default function AuthCallbackPage() {
                     return;
                 }
 
-                // Sync user with backend — try login first, then register if user doesn't exist
-                let synced = false;
+                const loginRes = await fetch(`${API}/api/auth/google/callback`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        email,
+                        name,
+                        provider: "google",
+                        providerId: user.id,
+                    }),
+                });
 
-                // Try logging in with the backend using a special OAuth endpoint or existing login
-                try {
-                    const loginRes = await fetch(`${API}/api/auth/google/callback`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: "include",
-                        body: JSON.stringify({
-                            email,
-                            name,
-                            provider: "google",
-                            providerId: user.id,
-                        }),
-                    });
+                const payload = await loginRes.json().catch(() => ({}));
 
-                    if (loginRes.ok) {
-                        synced = true;
-                    }
-                } catch {
-                    // Backend google callback endpoint may not exist, try regular register/login
+                if (!loginRes.ok) {
+                    throw new Error(payload.message || "Google sign-in could not be completed.");
                 }
 
-                if (!synced) {
-                    // Try registering the user with the backend
-                    try {
-                        const registerRes = await fetch(`${API}/api/auth/register`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            credentials: "include",
-                            body: JSON.stringify({
-                                name,
-                                email,
-                                phone: "",
-                                password: `oauth_${user.id}_${Date.now()}`, // Generated password for OAuth users
-                                role: "patient",
-                            }),
-                        });
-
-                        if (registerRes.ok || registerRes.status === 409) {
-                            // 409 = user already exists, try login
-                            const loginRes = await fetch(`${API}/api/auth/login`, {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                credentials: "include",
-                                body: JSON.stringify({
-                                    email,
-                                    password: `oauth_${user.id}_${Date.now()}`,
-                                }),
-                            });
-
-                            if (!loginRes.ok) {
-                                console.warn("OAuth user created but backend login sync may need manual setup");
-                            }
-                        }
-                    } catch {
-                        console.warn("Backend sync failed — user authenticated via Supabase only");
-                    }
+                if (payload.token && typeof window !== "undefined") {
+                    localStorage.setItem("smilecare_token", payload.token);
                 }
 
-                // Call refreshUser to populate the AuthContext state immediately
                 await refreshUser();
 
-                // Redirect logic
-                const pendingBooking = sessionStorage.getItem('pendingBooking');
-                if (pendingBooking) {
-                    router.replace("/booking");
-                } else {
-                    router.replace("/dashboard");
-                }
+                const pendingBooking = getPendingBooking();
+                const callbackUrl = searchParams.get("callbackUrl") || pendingBooking?.callbackUrl || "/dashboard";
+                router.replace(callbackUrl);
             } catch (err) {
                 console.error("Auth callback error:", err);
                 setError("Authentication failed. Redirecting to login...");
@@ -112,8 +70,8 @@ export default function AuthCallbackPage() {
             }
         };
 
-        handleCallback();
-    }, [router, refreshUser]);
+        void handleCallback();
+    }, [router, refreshUser, searchParams]);
 
     if (error) {
         return (

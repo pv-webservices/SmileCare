@@ -6,11 +6,8 @@ import TreatmentStep from "@/components/booking/TreatmentStep";
 import SpecialistStep from "@/components/booking/SpecialistStep";
 import ScheduleStep from "@/components/booking/ScheduleStep";
 import PatientDetailsStep from "@/components/booking/PatientDetailsStep";
-import ConfirmationStep from "@/components/booking/ConfirmationStep";
 import BookingSummary from "@/components/booking/BookingSummary";
 import { ChevronRight, AlertCircle, RefreshCw } from "lucide-react";
-
-// ── Inner component — consumes BookingContext ──────────────────────────────
 
 function BookingPageInner() {
     const {
@@ -35,12 +32,10 @@ function BookingPageInner() {
         selectSpecialist,
         selectDate,
         selectSlot,
-        selectPatientDetails,
+        proceedToPayment,
         handleHoldExpired,
-        handleConfirm,
     } = useBooking();
 
-    // Fatal error — catalog completely failed to load
     if (catalogError && treatments.length === 0) {
         return (
             <main className="min-h-screen bg-background-light flex items-center justify-center px-6">
@@ -67,8 +62,6 @@ function BookingPageInner() {
     return (
         <main className="min-h-screen bg-background-light pt-8 pb-20">
             <div className="mx-auto w-full max-w-6xl px-6">
-
-                {/* Breadcrumb */}
                 <nav className="mb-10 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-300">
                     <a className="hover:text-primary transition-colors" href="/">
                         Home
@@ -84,7 +77,6 @@ function BookingPageInner() {
                     <span className="text-slate-700">New Booking</span>
                 </nav>
 
-                {/* Hero Header */}
                 <div className="mb-16 text-center lg:text-left">
                     <h1 className="font-display text-5xl md:text-6xl font-bold text-primary leading-tight mb-4 tracking-tight">
                         Concierge Booking
@@ -95,7 +87,6 @@ function BookingPageInner() {
                     </p>
                 </div>
 
-                {/* Non-fatal submission error banner */}
                 {submissionError && (
                     <div className="mb-8 flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
                         <AlertCircle size={16} className="shrink-0" />
@@ -104,11 +95,9 @@ function BookingPageInner() {
                 )}
 
                 <div className="lg:grid lg:grid-cols-3 gap-16">
-                    {/* Left — main step area */}
                     <div className="lg:col-span-2 space-y-16">
                         <BookingProgress currentStep={step} />
 
-                        {/* Step 1 — Choose Treatment */}
                         {step === 1 && (
                             <TreatmentStep
                                 treatments={treatments}
@@ -118,7 +107,6 @@ function BookingPageInner() {
                             />
                         )}
 
-                        {/* Step 2 — Choose Specialist */}
                         {step === 2 && (
                             <SpecialistStep
                                 specialists={specialists}
@@ -128,7 +116,6 @@ function BookingPageInner() {
                             />
                         )}
 
-                        {/* Step 3 — Choose Date & Slot */}
                         {step === 3 && (
                             <ScheduleStep
                                 selectedDate={selectedDate}
@@ -145,34 +132,15 @@ function BookingPageInner() {
                             />
                         )}
 
-                        {/* Step 4 — Patient Details */}
                         {step === 4 && (
                             <PatientDetailsStep
-                                onSubmit={selectPatientDetails}
+                                onSubmit={proceedToPayment}
                                 initial={patientDetails}
-                            />
-                        )}
-
-                        {/* Step 5 — Review & Confirm */}
-                        {step === 5 && (
-                            <ConfirmationStep
-                                treatment={selectedTreatment}
-                                specialist={selectedSpecialist}
-                                date={selectedDate}
-                                slot={selectedSlot}
-                                patientDetails={patientDetails}
-                                holdExpiresAt={holdExpiresAt}
-                                isSubmitting={isSubmitting}
-                                onConfirm={handleConfirm}
-                                onEdit={setStep}
                             />
                         )}
                     </div>
 
-                    {/* Right — sticky summary sidebar
-                        Hidden on steps 4 & 5 since ConfirmationStep
-                        already shows the full summary inline */}
-                    {step <= 3 && (
+                    {step <= 4 && (
                         <div className="mt-16 lg:mt-0">
                             <BookingSummary
                                 treatment={selectedTreatment}
@@ -180,7 +148,7 @@ function BookingPageInner() {
                                 date={selectedDate}
                                 slot={selectedSlot}
                                 holdExpiresAt={holdExpiresAt}
-                                onConfirm={handleConfirm}
+                                onConfirm={() => undefined}
                                 isSubmitting={isSubmitting}
                                 onHoldExpired={handleHoldExpired}
                             />
@@ -192,8 +160,6 @@ function BookingPageInner() {
     );
 }
 
-// ── Page export — wraps inner with provider ────────────────────────────────
-
 export default function BookingPage() {
     return (
         <BookingProvider>
@@ -201,3 +167,4 @@ export default function BookingPage() {
         </BookingProvider>
     );
 }
+

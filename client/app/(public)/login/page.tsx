@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { LogIn, Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
-import { Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { getPendingBooking, setPendingBooking } from "@/lib/booking-session";
 
 function LoginForm() {
   const { login, loginWithGoogle } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const redirectTo = searchParams.get("redirect") || "/dashboard";
+  const redirectTo = searchParams.get("callbackUrl") || searchParams.get("redirect") || "/dashboard";
   const prefillEmail = searchParams.get("email") || "";
   const justRegistered = searchParams.get("registered") === "1";
 
@@ -23,7 +23,6 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [noAccount, setNoAccount] = useState(false);
 
-  // Auto-fill credentials from registration (sessionStorage)
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem("smilecare_prefill");
@@ -45,30 +44,13 @@ function LoginForm() {
     setLoading(true);
     try {
       await login(email, password);
-
-      // Determine logical redirect
-      if (searchParams.has("redirect")) {
-        router.replace(decodeURIComponent(searchParams.get("redirect")!));
-      } else if (document.referrer.includes(window.location.origin)) {
-        try {
-          const referrerPath = new URL(document.referrer).pathname;
-          if (referrerPath === '/') {
-            router.replace('/');
-          } else {
-            router.replace('/dashboard');
-          }
-        } catch {
-          router.replace('/dashboard');
-        }
-      } else {
-        router.replace('/dashboard');
-      }
-
+      router.push(decodeURIComponent(redirectTo));
     } catch (err: any) {
-      if (err?.type === 'USER_NOT_FOUND') {
+      if (err?.type === "USER_NOT_FOUND") {
         setNoAccount(true);
-      } else if (err?.type === 'INVALID_CREDENTIALS') {
-        setError("Error: Incorrect password. Please try again.");
+        setError(err?.message || "User not found. Please create an account.");
+      } else if (err?.type === "INVALID_CREDENTIALS") {
+        setError(err?.message || "Incorrect password. Please try again.");
       } else {
         setError(err?.message || "Login failed. Please try again.");
       }
@@ -78,10 +60,17 @@ function LoginForm() {
   };
 
   const handleGoogleLogin = () => {
-    loginWithGoogle();
+    const pendingBooking = getPendingBooking();
+    if (pendingBooking) {
+      setPendingBooking({
+        ...pendingBooking,
+        currentStep: Math.min(Math.max(pendingBooking.currentStep || 4, 1), 4),
+        callbackUrl: redirectTo || pendingBooking.callbackUrl || "/payment",
+      });
+    }
+    loginWithGoogle(redirectTo || "/dashboard");
   };
 
-  // Clear specific inline errors on input changes
   const clearErrors = () => {
     setError("");
     setNoAccount(false);
@@ -159,7 +148,7 @@ function LoginForm() {
                     clearErrors();
                   }}
                   className="appearance-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-400 text-slate-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm pr-10 transition-colors"
-                  placeholder="••••••••"
+                  placeholder="........"
                 />
                 <button
                   type="button"
@@ -184,11 +173,11 @@ function LoginForm() {
 
           {noAccount && (
             <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 flex flex-wrap items-start gap-1">
-              <span>⚠️ No account found.</span>
+              <span>No account found.</span>
               <button
                 type="button"
-                onClick={() => router.push('/register')}
-                className="font-bold underline text-primary hover:no-underline transition-colors animate-pulse hover:animate-none ml-1"
+                onClick={() => router.push("/register")}
+                className="font-bold underline text-primary hover:no-underline transition-colors ml-1"
               >
                 Create an account
               </button>
@@ -224,7 +213,6 @@ function LoginForm() {
             </button>
           </div>
 
-          {/* OAuth Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200"></div>
@@ -234,7 +222,6 @@ function LoginForm() {
             </div>
           </div>
 
-          {/* Google OAuth Button */}
           <div>
             <button
               type="button"

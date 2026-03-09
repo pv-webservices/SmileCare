@@ -58,7 +58,7 @@ model User {
   id            String         @id @default(uuid())
   name          String
   email         String         @unique
-  phone         String         @unique
+  phone         String?        @unique
   passwordHash  String
   role          Role           @default(patient)
   createdAt     DateTime       @default(now())
@@ -241,3 +241,4 @@ model Referral {
   rewardClaimed Boolean  @default(false)
   createdAt     DateTime @default(now())
 }
+

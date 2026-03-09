@@ -18,7 +18,7 @@ export interface PatientDetails {
 }
 
 interface PatientDetailsStepProps {
-  onSubmit: (details: PatientDetails) => void;
+  onSubmit: (details: PatientDetails) => void | Promise<void>;
   initial?: PatientDetails | null;
 }
 
@@ -54,10 +54,11 @@ export default function PatientDetailsStep({
 
     if (!form.name.trim()) errs.name = "Full name is required";
 
-    if (!form.phone.trim() || form.phone.trim() === "+91")
+    if (!form.phone.trim() || form.phone.trim() === "+91") {
       errs.phone = "Phone number is required";
-    else if (!/^\+91\s?[6-9]\d{9}$/.test(form.phone.trim().replace(/\s+/g, " ")))
+    } else if (!/^\+91\s?[6-9]\d{9}$/.test(form.phone.trim().replace(/\s+/g, " "))) {
       errs.phone = "Enter a valid Indian phone number (e.g., +91 9876543210)";
+    }
 
     if (!form.email.trim()) errs.email = "Email address is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
@@ -69,13 +70,14 @@ export default function PatientDetailsStep({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (validate()) onSubmit(form);
+    if (validate()) {
+      void onSubmit(form);
+    }
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
-    // Strip the starting +91 (with or without space), then remove non-digits, and cap at 10 to ensure we only accept 10 digits
-    const stripped = rawValue.replace(/^\+91\s*/, '').replace(/\D/g, '').slice(0, 10);
+    const stripped = rawValue.replace(/^\+91\s*/, "").replace(/\D/g, "").slice(0, 10);
     setForm((p) => ({ ...p, phone: `+91 ${stripped}` }));
   };
 
@@ -88,7 +90,7 @@ export default function PatientDetailsStep({
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-2xl mx-auto">
       <div className="mb-6">
-        <p className="text-sm text-slate-500 font-medium mb-2">Step 4 of 5</p>
+        <p className="text-sm text-slate-500 font-medium mb-2">Step 4 of 4</p>
         <h2 className="text-3xl font-display font-bold text-slate-900 mb-3">
           Your Details
         </h2>
@@ -100,7 +102,6 @@ export default function PatientDetailsStep({
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
-          {/* Full Name */}
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
               <User size={16} />
@@ -124,7 +125,6 @@ export default function PatientDetailsStep({
             )}
           </div>
 
-          {/* Phone */}
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
               <Phone size={16} />
@@ -147,7 +147,6 @@ export default function PatientDetailsStep({
             )}
           </div>
 
-          {/* Email */}
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
               <Mail size={16} />
@@ -176,7 +175,6 @@ export default function PatientDetailsStep({
             )}
           </div>
 
-          {/* Notes */}
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
               <MessageSquare size={16} />
@@ -210,7 +208,7 @@ export default function PatientDetailsStep({
             type="submit"
             className="flex items-center gap-2.5 bg-primary text-white px-4 sm:px-8 py-4 rounded-xl font-bold text-base shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all"
           >
-            Review Booking
+            Continue to Payment
             <ArrowRight size={18} />
           </button>
         </div>

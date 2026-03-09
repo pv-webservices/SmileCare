@@ -1,11 +1,9 @@
-// ─── Booking Controller — Request Handling Layer ─────────────────────────────
-
-import { Request, Response } from 'express';
-import { AuthRequest } from '../../middleware/authMiddleware';
-import * as slotService from './slot.service';
-import * as bookingService from './booking.service';
-import { SlotError } from './slot.service';
-import { BookingError } from './booking.service';
+import { Request, Response } from "express";
+import { AuthRequest } from "../../middleware/authMiddleware";
+import * as slotService from "./slot.service";
+import * as bookingService from "./booking.service";
+import { SlotError } from "./slot.service";
+import { BookingError } from "./booking.service";
 import {
     successResponse,
     errorResponse,
@@ -14,10 +12,8 @@ import {
     CreateBookingBody,
     RescheduleBody,
     CancelBody,
-} from './booking.types';
-import { prisma } from '../../lib/prisma';
-
-// ─── GET /api/slots ──────────────────────────────────────────────────────────
+} from "./booking.types";
+import { prisma } from "../../lib/prisma";
 
 export async function getSlots(req: Request, res: Response) {
     try {
@@ -30,14 +26,12 @@ export async function getSlots(req: Request, res: Response) {
 
         return res.status(200).json(slots);
     } catch (error) {
-        console.error('[GET_SLOTS_ERROR]', error);
+        console.error("[GET_SLOTS_ERROR]", error);
         return res.status(500).json(
-            errorResponse('INTERNAL_ERROR', 'Failed to fetch available slots')
+            errorResponse("INTERNAL_ERROR", "Failed to fetch available slots")
         );
     }
 }
-
-// ─── POST /api/slots/:id/hold ────────────────────────────────────────────────
 
 export async function holdSlot(req: Request, res: Response) {
     try {
@@ -46,7 +40,7 @@ export async function holdSlot(req: Request, res: Response) {
 
         if (!sessionId) {
             return res.status(400).json(
-                errorResponse('VALIDATION_ERROR', 'sessionId is required')
+                errorResponse("VALIDATION_ERROR", "sessionId is required")
             );
         }
 
@@ -56,7 +50,7 @@ export async function holdSlot(req: Request, res: Response) {
             successResponse({
                 id: slot.id,
                 holdExpiresAt: slot.holdExpiresAt,
-                message: 'Slot held successfully',
+                message: "Slot held successfully",
             })
         );
     } catch (error) {
@@ -71,14 +65,12 @@ export async function holdSlot(req: Request, res: Response) {
             return res.status(status).json(errorResponse(error.code, error.message));
         }
 
-        console.error('[HOLD_SLOT_ERROR]', error);
+        console.error("[HOLD_SLOT_ERROR]", error);
         return res.status(500).json(
-            errorResponse('INTERNAL_ERROR', 'Failed to hold slot')
+            errorResponse("INTERNAL_ERROR", "Failed to hold slot")
         );
     }
 }
-
-// ─── POST /api/bookings ──────────────────────────────────────────────────────
 
 export async function createBooking(req: AuthRequest, res: Response) {
     try {
@@ -87,20 +79,19 @@ export async function createBooking(req: AuthRequest, res: Response) {
         if (!body.slotId || !body.treatmentId || !body.sessionId || !body.idempotencyKey) {
             return res.status(400).json(
                 errorResponse(
-                    'VALIDATION_ERROR',
-                    'slotId, treatmentId, sessionId, and idempotencyKey are required'
+                    "VALIDATION_ERROR",
+                    "slotId, treatmentId, sessionId, and idempotencyKey are required"
                 )
             );
         }
 
-        // Look up patient from authenticated user
         const patient = await prisma.patient.findUnique({
             where: { userId: req.user!.id },
         });
 
         if (!patient) {
             return res.status(403).json(
-                errorResponse('NOT_A_PATIENT', 'Only patients can create bookings')
+                errorResponse("NOT_A_PATIENT", "Only patients can create bookings")
             );
         }
 
@@ -121,14 +112,12 @@ export async function createBooking(req: AuthRequest, res: Response) {
             return res.status(status).json(errorResponse(error.code, error.message));
         }
 
-        console.error('[CREATE_BOOKING_ERROR]', error);
+        console.error("[CREATE_BOOKING_ERROR]", error);
         return res.status(500).json(
-            errorResponse('INTERNAL_ERROR', 'Failed to create booking')
+            errorResponse("INTERNAL_ERROR", "Failed to create booking")
         );
     }
 }
-
-// ─── PUT /api/bookings/:id/reschedule ────────────────────────────────────────
 
 export async function rescheduleBooking(req: AuthRequest, res: Response) {
     try {
@@ -137,7 +126,7 @@ export async function rescheduleBooking(req: AuthRequest, res: Response) {
 
         if (!newSlotId) {
             return res.status(400).json(
-                errorResponse('VALIDATION_ERROR', 'newSlotId is required')
+                errorResponse("VALIDATION_ERROR", "newSlotId is required")
             );
         }
 
@@ -163,14 +152,12 @@ export async function rescheduleBooking(req: AuthRequest, res: Response) {
             return res.status(status).json(errorResponse(error.code, error.message));
         }
 
-        console.error('[RESCHEDULE_BOOKING_ERROR]', error);
+        console.error("[RESCHEDULE_BOOKING_ERROR]", error);
         return res.status(500).json(
-            errorResponse('INTERNAL_ERROR', 'Failed to reschedule booking')
+            errorResponse("INTERNAL_ERROR", "Failed to reschedule booking")
         );
     }
 }
-
-// ─── DELETE /api/bookings/:id/cancel ─────────────────────────────────────────
 
 export async function cancelBooking(req: AuthRequest, res: Response) {
     try {
@@ -201,14 +188,12 @@ export async function cancelBooking(req: AuthRequest, res: Response) {
             return res.status(status).json(errorResponse(error.code, error.message));
         }
 
-        console.error('[CANCEL_BOOKING_ERROR]', error);
+        console.error("[CANCEL_BOOKING_ERROR]", error);
         return res.status(500).json(
-            errorResponse('INTERNAL_ERROR', 'Failed to cancel booking')
+            errorResponse("INTERNAL_ERROR", "Failed to cancel booking")
         );
     }
 }
-
-// ─── GET /api/bookings/my ────────────────────────────────────────────────────
 
 export async function getMyBookings(req: AuthRequest, res: Response) {
     try {
@@ -218,15 +203,28 @@ export async function getMyBookings(req: AuthRequest, res: Response) {
 
         if (!patient) {
             return res.status(404).json(
-                errorResponse('NOT_FOUND', 'Patient record not found')
+                errorResponse("NOT_FOUND", "Patient record not found")
             );
         }
 
-        const { status } = req.query;
+        const filter = String(req.query.status || req.query.scope || "").toLowerCase();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
         const where: any = { patientId: patient.id };
-        if (status) {
-            where.status = status;
+        let orderBy: any[] = [{ slot: { date: "desc" } }, { slot: { startTime: "desc" } }];
+
+        if (filter === "upcoming") {
+            where.status = { in: ["confirmed", "pending_payment"] };
+            where.slot = { date: { gte: today } };
+            orderBy = [{ slot: { date: "asc" } }, { slot: { startTime: "asc" } }];
+        } else if (filter === "history" || filter === "past") {
+            where.OR = [
+                { status: { in: ["completed", "cancelled", "no_show", "refunded", "refund_pending"] } },
+                { slot: { date: { lt: today } } },
+            ];
+        } else if (filter) {
+            where.status = filter;
         }
 
         const bookings = await prisma.booking.findMany({
@@ -242,15 +240,13 @@ export async function getMyBookings(req: AuthRequest, res: Response) {
                 treatment: true,
                 payment: true
             },
-            orderBy: {
-                slot: { startTime: 'desc' }
-            }
+            orderBy,
         });
 
-        // Map to standard frontend format
-        const formatted = bookings.map(b => ({
+        const formatted = bookings.map((b) => ({
             id: b.id,
             treatment: b.treatment.name,
+            treatmentId: b.treatmentId,
             doctor: `Dr. ${b.slot.dentist.user.name}`,
             specialization: b.slot.dentist.specialization,
             date: b.slot.date.toISOString(),
@@ -263,9 +259,9 @@ export async function getMyBookings(req: AuthRequest, res: Response) {
 
         return res.status(200).json(formatted);
     } catch (error) {
-        console.error('[GET_MY_BOOKINGS_ERROR]', error);
+        console.error("[GET_MY_BOOKINGS_ERROR]", error);
         return res.status(500).json(
-            errorResponse('INTERNAL_ERROR', 'Failed to fetch bookings')
+            errorResponse("INTERNAL_ERROR", "Failed to fetch bookings")
         );
     }
 }

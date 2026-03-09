@@ -54,8 +54,8 @@ export default function AppointmentsPage() {
 
             try {
                 const [uRes, hRes] = await Promise.all([
-                    fetch(`${API}/api/patient/appointments/upcoming`, { credentials: "include" }).catch(() => null),
-                    fetch(`${API}/api/patient/appointments/history`, { credentials: "include" }).catch(() => null),
+                    fetch(`${API}/api/bookings/my?status=upcoming`, { credentials: "include" }).catch(() => null),
+                    fetch(`${API}/api/bookings/my?status=history`, { credentials: "include" }).catch(() => null),
                 ]);
 
                 const serverUp = uRes?.ok ? await uRes.json() : [];
@@ -296,3 +296,4 @@ export default function AppointmentsPage() {
         </>
     );
 }
+

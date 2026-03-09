@@ -279,8 +279,8 @@ export default function DashboardPage() {
             try {
                 const [pRes, uRes, hRes, dRes, nRes] = await Promise.all([
                     fetch(`${API}/api/patient/me`, { credentials: "include" }).catch(() => null),
-                    fetch(`${API}/api/patient/appointments/upcoming`, { credentials: "include" }).catch(() => null),
-                    fetch(`${API}/api/patient/appointments/history`, { credentials: "include" }).catch(() => null),
+                    fetch(`${API}/api/bookings/my?status=upcoming`, { credentials: "include" }).catch(() => null),
+                    fetch(`${API}/api/bookings/my?status=history`, { credentials: "include" }).catch(() => null),
                     fetch(`${API}/api/patient/documents`, { credentials: "include" }).catch(() => null),
                     fetch(`${API}/api/notifications`, { credentials: "include" }).catch(() => null),
                 ]);
@@ -619,3 +619,4 @@ export default function DashboardPage() {
         </>
     );
 }
+

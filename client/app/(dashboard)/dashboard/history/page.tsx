@@ -1,64 +1,46 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { History, FileDown, Loader2 } from "lucide-react";
-import { getLocalHistoryBookings, getLocalBookings } from "@/lib/booking-storage";
+import { History, FileDown } from "lucide-react";
+import { getLocalHistoryBookings } from "@/lib/booking-storage";
 import { HistoryRowSkeleton } from "@/components/ui/Skeleton";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-const mockHistory = [
-    { id: "h1", treatment: "Deep Cleaning & Polish", doctor: "Dr. Sarah Laine", date: "2023-10-12", startTime: "09:00 AM", status: "completed", paymentAmount: 15000, paymentStatus: "captured" },
-    { id: "h2", treatment: "Invisalign Scan", doctor: "Dr. Julian Thorne", date: "2023-09-05", startTime: "10:30 AM", status: "completed", paymentAmount: 25000, paymentStatus: "captured" },
-    { id: "h3", treatment: "Initial Consultation", doctor: "Dr. Julian Thorne", date: "2023-08-14", startTime: "02:00 PM", status: "completed", paymentAmount: 5000, paymentStatus: "captured" },
-    { id: "h4", treatment: "Root Canal", doctor: "Dr. Sarah Laine", date: "2023-06-20", startTime: "11:00 AM", status: "completed", paymentAmount: 35000, paymentStatus: "captured" },
-    { id: "h5", treatment: "Emergency Visit", doctor: "Dr. Julian Thorne", date: "2023-04-03", startTime: "08:00 AM", status: "cancelled", paymentAmount: null, paymentStatus: null },
-];
-
 function formatDate(d: string) {
-    return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return new Date(d).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" });
 }
 
 function formatCurrency(amt: number | null) {
-    if (amt === null) return "—";
-    return `₹${(amt / 100).toLocaleString()}`;
+    if (amt === null) return "-";
+    return `INR ${amt.toLocaleString("en-IN")}`;
 }
 
 export default function HistoryPage() {
-    const [history, setHistory] = useState<any[]>(
-        () => (typeof window !== "undefined"
-            ? getLocalHistoryBookings()
-            : [])
-    );
+    const [history, setHistory] = useState<any[]>(() => (typeof window !== "undefined" ? getLocalHistoryBookings() : []));
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const load = async () => {
             const localHist = getLocalHistoryBookings();
-            // Show local immediately while server loads
             if (localHist.length > 0) setHistory(localHist);
 
             try {
-                const res = await fetch(
-                    `${API}/api/patient/appointments/history`,
-                    { credentials: "include" }
-                ).catch(() => null);
-
+                const res = await fetch(`${API}/api/bookings/my?status=history`, { credentials: "include" }).catch(() => null);
                 if (res?.ok) {
                     const serverHist = await res.json();
                     const merged = [
                         ...serverHist,
-                        ...localHist.filter(
-                            (l: any) =>
-                                !serverHist.some((s: any) => s.id === l.id)
-                        ),
+                        ...localHist.filter((l: any) => !serverHist.some((s: any) => s.id === l.id)),
                     ];
                     setHistory(merged);
                 }
-            } catch { /* keep local data */ }
+            } catch {
+                // keep local fallback
+            }
             setLoading(false);
         };
-        load();
+        void load();
     }, []);
 
     const statusColor = (s: string) => {

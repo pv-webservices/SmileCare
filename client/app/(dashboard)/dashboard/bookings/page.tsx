@@ -191,10 +191,10 @@ export default function BookingsPage() {
 
             try {
                 const [uRes, hRes] = await Promise.all([
-                    fetch(`${API}/api/patient/appointments/upcoming`, {
+                    fetch(`${API}/api/bookings/my?status=upcoming`, {
                         credentials: "include",
                     }).catch(() => null),
-                    fetch(`${API}/api/patient/appointments/history`, {
+                    fetch(`${API}/api/bookings/my?status=history`, {
                         credentials: "include",
                     }).catch(() => null),
                 ]);
@@ -321,3 +321,4 @@ export default function BookingsPage() {
         </>
     );
 }
+

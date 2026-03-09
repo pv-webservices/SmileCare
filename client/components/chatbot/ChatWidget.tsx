@@ -120,7 +120,7 @@ export default function ChatWidget() {
           body: JSON.stringify({
             message: content.trim(),
             userId: user?.id || null,
-            conversationHistory: messages.map((m) => ({
+            history: messages.map((m) => ({
               role: m.role,
               content: m.content,
             })),
@@ -133,9 +133,9 @@ export default function ChatWidget() {
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: data.reply || "Sorry, I couldn't process that.",
-          isEmergency: data.isEmergency || false,
-          cta: data.cta,
+          content: data.data?.reply || data.reply || "Sorry, I couldn't process that.",
+          isEmergency: data.data?.isEmergency || data.isEmergency || false,
+          cta: data.data?.cta || data.cta,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, assistantMessage]);
