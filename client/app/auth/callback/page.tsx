@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -10,6 +11,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function AuthCallbackPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { refreshUser } = useAuth();
     const [error, setError] = useState<string | null>(null);
 
@@ -99,11 +101,12 @@ export default function AuthCallbackPage() {
                 await refreshUser();
 
                 // Redirect logic
+                const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
                 const pendingBooking = sessionStorage.getItem('pendingBooking');
-                if (pendingBooking) {
+                if (pendingBooking && callbackUrl.includes("/booking")) {
                     router.replace("/booking");
                 } else {
-                    router.replace("/dashboard");
+                    router.replace(callbackUrl);
                 }
             } catch (err) {
                 console.error("Auth callback error:", err);
@@ -113,7 +116,7 @@ export default function AuthCallbackPage() {
         };
 
         handleCallback();
-    }, [router, refreshUser]);
+    }, [router, refreshUser, searchParams]);
 
     if (error) {
         return (

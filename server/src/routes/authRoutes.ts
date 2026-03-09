@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, logout, getMe } from '../controllers/authController';
+import { register, login, logout, getMe, googleCallback } from '../controllers/authController';
 import { authenticate } from '../middleware/authMiddleware';
 import rateLimit from 'express-rate-limit';
 
@@ -33,6 +33,7 @@ const router = Router();
 
 router.post('/register', authLimiter, register);
 router.post('/login', authLimiter, login);
+router.post('/google/callback', authLimiter, googleCallback);
 router.post('/logout', logout);
 router.get('/me', apiLimiter, authenticate, getMe);
 

@@ -161,9 +161,9 @@ export function BookingProvider({ children }: { children: ReactNode }) {
                     if (bookingData.date) setSelectedDate(new Date(bookingData.date));
                     if (bookingData.timeSlot) setSelectedSlot(bookingData.timeSlot);
                     if (bookingData.patientDetails) setPatientDetails(bookingData.patientDetails);
-                    sessionStorage.removeItem('pendingBooking');
-                    setStep(5);
-                    setMaxReachedStep(5);
+                    const targetStep = Number(bookingData.currentStep || 5);
+                    setStep(targetStep);
+                    setMaxReachedStep(Math.max(5, targetStep));
                 } catch (e) {
                     console.error('Failed to restore pending booking', e);
                 }
@@ -306,17 +306,14 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         )
             return;
 
-        if (!isAuthenticated) {
-            sessionStorage.setItem('pendingBooking', JSON.stringify({
-                treatment: selectedTreatment,
-                specialist: selectedSpecialist,
-                date: selectedDate,
-                timeSlot: selectedSlot,
-                patientDetails: patientDetails,
-            }));
-            window.location.href = '/login?redirect=/booking';
-            return;
-        }
+        sessionStorage.setItem('pendingBooking', JSON.stringify({
+            treatment: selectedTreatment,
+            specialist: selectedSpecialist,
+            date: selectedDate,
+            timeSlot: selectedSlot,
+            patientDetails: patientDetails,
+            currentStep: 5,
+        }));
 
         setIsSubmitting(true);
         setSubmissionError(null);
@@ -378,6 +375,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         sessionId,
         router,
         toastError,
+        patientDetails,
     ]);
 
     const resetBooking = useCallback(() => {

@@ -57,6 +57,29 @@ function cleanExpiredOrders() {
     }
 }
 
+
+async function ensureSlotCanBeFinalized(
+    tx: Prisma.TransactionClient,
+    slotId: string,
+    sessionId: string
+) {
+    const slot = await tx.slot.findUnique({ where: { id: slotId } });
+    if (!slot) {
+        throw new PaymentError("SLOT_NOT_FOUND", "Slot not found");
+    }
+
+    if (!slot.isAvailable) {
+        throw new PaymentError("SLOT_NOT_AVAILABLE", "Slot not available");
+    }
+
+    await tx.slot.update({
+        where: { id: slotId },
+        data: {
+            heldBySessionId: sessionId,
+            holdExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        },
+    });
+}
 // ─── Create Mock Order ───────────────────────────────────────────────────────
 
 export async function createOrder(input: CreateOrderBody) {
@@ -222,6 +245,7 @@ export async function verifyRazorpayPayment(
     // 3. Create booking + payment atomically (reuse same transaction logic)
     const result = await prisma.$transaction(
         async (tx) => {
+            await ensureSlotCanBeFinalized(tx, slotId, sessionId);
             const bookingResult = await createBooking(
                 { slotId, treatmentId, sessionId, idempotencyKey },
                 patientId,
@@ -346,6 +370,7 @@ export async function verifyMockPayment(
         async (tx) => {
             // 1. Create the booking via the existing booking service logic
             //    (handles slot locking, hold validation, idempotency)
+            await ensureSlotCanBeFinalized(tx, slotId, sessionId);
             const bookingResult = await createBooking(
                 { slotId, treatmentId, sessionId, idempotencyKey },
                 patientId,

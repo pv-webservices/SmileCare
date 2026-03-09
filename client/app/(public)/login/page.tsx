@@ -12,7 +12,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const redirectTo = searchParams.get("redirect") || "/dashboard";
+  const redirectTo = searchParams.get("callbackUrl") || searchParams.get("redirect") || "/dashboard";
   const prefillEmail = searchParams.get("email") || "";
   const justRegistered = searchParams.get("registered") === "1";
 
@@ -45,30 +45,14 @@ function LoginForm() {
     setLoading(true);
     try {
       await login(email, password);
-
-      // Determine logical redirect
-      if (searchParams.has("redirect")) {
-        router.replace(decodeURIComponent(searchParams.get("redirect")!));
-      } else if (document.referrer.includes(window.location.origin)) {
-        try {
-          const referrerPath = new URL(document.referrer).pathname;
-          if (referrerPath === '/') {
-            router.replace('/');
-          } else {
-            router.replace('/dashboard');
-          }
-        } catch {
-          router.replace('/dashboard');
-        }
-      } else {
-        router.replace('/dashboard');
-      }
+      router.push(decodeURIComponent(redirectTo));
 
     } catch (err: any) {
       if (err?.type === 'USER_NOT_FOUND') {
         setNoAccount(true);
+        setError(err?.message || "User not found. Please create an account.");
       } else if (err?.type === 'INVALID_CREDENTIALS') {
-        setError("Error: Incorrect password. Please try again.");
+        setError(err?.message || "Incorrect password. Please try again.");
       } else {
         setError(err?.message || "Login failed. Please try again.");
       }
@@ -78,7 +62,18 @@ function LoginForm() {
   };
 
   const handleGoogleLogin = () => {
-    loginWithGoogle();
+    const callbackUrl = redirectTo || "/dashboard";
+    const pendingBooking = sessionStorage.getItem("pendingBooking");
+    if (pendingBooking) {
+      try {
+        const parsed = JSON.parse(pendingBooking);
+        const withStep = { ...parsed, currentStep: 4 };
+        sessionStorage.setItem("pendingBooking", JSON.stringify(withStep));
+      } catch {
+        // ignore malformed pendingBooking
+      }
+    }
+    loginWithGoogle(callbackUrl);
   };
 
   // Clear specific inline errors on input changes
