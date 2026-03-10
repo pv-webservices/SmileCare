@@ -21,8 +21,10 @@ import {
 } from "@/lib/booking-storage";
 import { BookingCardSkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/context/ToastContext";
+import { getApiBaseUrl } from "@/lib/api-base";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+const API = getApiBaseUrl();
 
 type Tab = "upcoming" | "history";
 
@@ -321,4 +323,8 @@ export default function BookingsPage() {
         </>
     );
 }
+
+
+
+
 

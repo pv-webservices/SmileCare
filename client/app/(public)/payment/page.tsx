@@ -48,10 +48,18 @@ const PROCESSING_MESSAGES = [
 const BANKS = ["SBI", "HDFC", "ICICI", "AXIS", "KOTAK", "YES"];
 const WALLETS = ["Paytm", "PhonePe", "Amazon Pay", "Mobikwik"];
 
+function getStoredAccessToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return localStorage.getItem("smilecare_token");
+}
+
 export default function PaymentPage() {
   const router = useRouter();
   const { success, error: toastError, warning } = useToast();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, refreshUser } = useAuth();
 
   const [pageState, setPageState] = useState<PageState>("loading");
   const [paymentData, setPaymentData] = useState<PaymentSession | null>(null);
@@ -70,6 +78,8 @@ export default function PaymentPage() {
   const [bookingId, setBookingId] = useState("");
   const [isPreparingOrder, setIsPreparingOrder] = useState(false);
   const [isFinalizingStoredPayment, setIsFinalizingStoredPayment] = useState(false);
+  const [finalizationError, setFinalizationError] = useState<string | null>(null);
+  const [hasAttemptedStoredFinalization, setHasAttemptedStoredFinalization] = useState(false);
 
   useEffect(() => {
     const storedSession = getPaymentSession();
@@ -87,6 +97,19 @@ export default function PaymentPage() {
   const convenienceFee = 0;
   const total = Math.max(1, subtotal - discount + convenienceFee);
   const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE;
+
+  useEffect(() => {
+    setHasAttemptedStoredFinalization(false);
+    setFinalizationError(null);
+  }, [paymentData?.orderId]);
+
+  const getMatchingPendingVerification = useCallback(() => {
+    const pendingVerification = getPendingPaymentVerification();
+    if (!paymentData?.orderId || !pendingVerification || pendingVerification.orderId !== paymentData.orderId) {
+      return null;
+    }
+    return pendingVerification;
+  }, [paymentData?.orderId]);
 
   useEffect(() => {
     if (pageState !== "form" || !paymentData || paymentData.orderId || isPreparingOrder) {
@@ -187,60 +210,105 @@ export default function PaymentPage() {
     clearPendingPaymentVerification();
     clearPaymentSession();
     clearPendingBooking();
+    setFinalizationError(null);
     setPageState("success");
     success("Payment Successful!", "Your appointment has been confirmed.");
   }, [paymentData, success, total]);
 
   const verifyPaymentOnServer = useCallback(async (payload: PendingPaymentVerification) => {
-    const res = await fetch(`${getApiBaseUrl()}/api/payments/verify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(data?.error?.message || data?.message || "Payment verification failed.");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const token = getStoredAccessToken();
+      const res = await fetch(`${getApiBaseUrl()}/api/payments/verify`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error?.message || data?.message || "Payment verification failed.");
+      }
+      return data;
+    } catch (error: any) {
+      if (error?.name === "AbortError") {
+        throw new Error("Verification timed out. Please try confirming the booking again.");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
     }
-    return data;
   }, []);
+
+  const attemptFinalizeStoredPayment = useCallback(async (payload: PendingPaymentVerification, autoTriggered = false) => {
+    setIsFinalizingStoredPayment(true);
+    setPageState("processing");
+    setProcessingMsg(PROCESSING_MESSAGES.length - 1);
+    setFinalizationError(null);
+
+    try {
+      let data;
+      try {
+        data = await verifyPaymentOnServer(payload);
+      } catch (error: any) {
+        const message = String(error?.message || "");
+        if (/unauthorized/i.test(message) || /expired token/i.test(message)) {
+          await refreshUser();
+          data = await verifyPaymentOnServer(payload);
+        } else {
+          throw error;
+        }
+      }
+
+      finalizeSuccess(
+        data.data?.payment?.id || payload.razorpayPaymentId || `pay_${Date.now()}`,
+        data.data?.booking?.id || `book_${Date.now()}`
+      );
+    } catch (error: any) {
+      setPageState("form");
+      setFinalizationError(error.message || "Payment could not be verified after login.");
+      if (!autoTriggered) {
+        toastError("Verification Failed", error.message || "Payment could not be verified after login.");
+      }
+      throw error;
+    } finally {
+      setIsFinalizingStoredPayment(false);
+    }
+  }, [finalizeSuccess, refreshUser, toastError, verifyPaymentOnServer]);
 
   const redirectToLoginToFinalize = useCallback((payload: PendingPaymentVerification) => {
     setPendingPaymentVerification(payload);
+    setHasAttemptedStoredFinalization(false);
+    setFinalizationError(null);
     success("Payment received", "Please sign in or create an account to confirm your booking.");
     router.replace(`/login?callbackUrl=${encodeURIComponent("/payment")}`);
   }, [router, success]);
 
   useEffect(() => {
-    if (!isAuthenticated || !paymentData || pageState !== "form" || isFinalizingStoredPayment) {
+    if (!isAuthenticated || !paymentData || pageState !== "form" || isFinalizingStoredPayment || hasAttemptedStoredFinalization) {
       return;
     }
 
-    const pendingVerification = getPendingPaymentVerification();
-    if (!pendingVerification || !paymentData.orderId || pendingVerification.orderId !== paymentData.orderId) {
+    const pendingVerification = getMatchingPendingVerification();
+    if (!pendingVerification) {
       return;
     }
 
     let cancelled = false;
+    setHasAttemptedStoredFinalization(true);
 
     const finalizePendingPayment = async () => {
-      setIsFinalizingStoredPayment(true);
-      setPageState("processing");
-      setProcessingMsg(PROCESSING_MESSAGES.length - 1);
       try {
-        const data = await verifyPaymentOnServer(pendingVerification);
-        if (cancelled) return;
-        finalizeSuccess(
-          data.data?.payment?.id || pendingVerification.razorpayPaymentId || `pay_${Date.now()}`,
-          data.data?.booking?.id || `book_${Date.now()}`
-        );
-      } catch (error: any) {
-        if (cancelled) return;
-        setPageState("form");
-        toastError("Verification Failed", error.message || "Payment could not be verified after login.");
-      } finally {
-        if (!cancelled) {
-          setIsFinalizingStoredPayment(false);
+        await attemptFinalizeStoredPayment(pendingVerification, true);
+      } catch {
+        if (cancelled) {
+          return;
         }
       }
     };
@@ -250,7 +318,7 @@ export default function PaymentPage() {
     return () => {
       cancelled = true;
     };
-  }, [finalizeSuccess, isAuthenticated, isFinalizingStoredPayment, pageState, paymentData, toastError, verifyPaymentOnServer]);
+  }, [attemptFinalizeStoredPayment, getMatchingPendingVerification, hasAttemptedStoredFinalization, isAuthenticated, isFinalizingStoredPayment, pageState, paymentData]);
 
   const buildVerificationPayload = useCallback((override?: Partial<PendingPaymentVerification>): PendingPaymentVerification | null => {
     if (!paymentData?.orderId) return null;
@@ -313,11 +381,7 @@ export default function PaymentPage() {
                 return;
               }
 
-              const data = await verifyPaymentOnServer(verificationPayload);
-              finalizeSuccess(
-                data.data?.payment?.id || response.razorpay_payment_id,
-                data.data?.booking?.id || `book_${Date.now()}`
-              );
+              await attemptFinalizeStoredPayment(verificationPayload);
               resolve();
             } catch (error: any) {
               toastError("Verification Failed", error.message || "Payment could not be verified.");
@@ -378,11 +442,7 @@ export default function PaymentPage() {
         return;
       }
 
-      const data = await verifyPaymentOnServer(verificationPayload);
-      finalizeSuccess(
-        data.data?.payment?.id || `pay_${Date.now()}`,
-        data.data?.booking?.id || `book_${Date.now()}`
-      );
+      await attemptFinalizeStoredPayment(verificationPayload);
     } catch (error: any) {
       toastError("Payment Failed", error.message || "Payment verification failed.");
       setPageState("form");
@@ -390,6 +450,7 @@ export default function PaymentPage() {
   };
 
   const canSubmit = PAYMENT_MODE === "razorpay" ? !!paymentData?.orderId && !isPreparingOrder : isFormValid() && !!paymentData?.orderId && !isPreparingOrder;
+  const matchingPendingVerification = getMatchingPendingVerification();
 
   const handlePay = async () => {
     if (!paymentData || !canSubmit) return;
@@ -489,6 +550,19 @@ export default function PaymentPage() {
             {!isAuthenticated && (
               <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 You can pay now without logging in. After payment, we will send you to login or sign up so we can attach the booking to your account.
+              </div>
+            )}
+            {matchingPendingVerification && isAuthenticated && finalizationError && (
+              <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
+                <p className="font-semibold">We received your payment, but the booking still needs confirmation.</p>
+                <p className="mt-1">{finalizationError}</p>
+                <button
+                  type="button"
+                  onClick={() => void attemptFinalizeStoredPayment(matchingPendingVerification)}
+                  className="mt-3 inline-flex items-center rounded-lg bg-primary px-4 py-2 font-bold text-white hover:opacity-90 transition-opacity"
+                >
+                  Confirm Booking Again
+                </button>
               </div>
             )}
             {isPreparingOrder && <div className="mb-6 rounded-xl border border-primary/10 bg-white px-4 py-3 text-sm text-primary/60 flex items-center gap-2"><Loader2 className="animate-spin" size={16} />Preparing your secure payment order...</div>}
