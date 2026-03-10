@@ -1,8 +1,9 @@
 "use client";
+
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import { useAuth } from "@/context/AuthContext";
 import { getApiBaseUrl } from "@/lib/api-base";
 import {
   MessageCircle,
@@ -15,8 +16,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-
-// -- Types ----------------------------------------------------------
 interface ChatCTA {
   label: string;
   href: string;
@@ -32,7 +31,6 @@ interface Message {
   timestamp: Date;
 }
 
-// -- Quick-reply chips shown on greeting -------------------------
 const QUICK_REPLIES = [
   "Book an appointment",
   "Treatment prices",
@@ -40,10 +38,13 @@ const QUICK_REPLIES = [
   "Clinic hours",
 ];
 
-// -- Main component --------------------------------------------------
+const HIDDEN_PATH_PREFIXES = ["/booking", "/login", "/register", "/signup", "/auth/callback"];
+const HIDDEN_PATH_MATCHES = ["/payment"];
+
 export default function ChatWidget() {
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname() || "";
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -52,53 +53,49 @@ export default function ChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // -- Message history ------------------------------------------------
-  const [messages, setMessages] = useState<Message[]>([{
-    id: "greeting",
-    role: "assistant",
-    content:
-      "Hi! I'm your SmileCare assistant. Ask me about treatments, book appointments, or get answers to your dental questions.",
-    timestamp: new Date(),
-  }]);
+  const shouldHide = HIDDEN_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
+    HIDDEN_PATH_MATCHES.some((segment) => pathname.includes(segment));
 
-  // -- Auto-open greeting (only on homepage, not on booking/payment) --
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "greeting",
+      role: "assistant",
+      content:
+        "Hi! I'm your SmileCare assistant. Ask me about treatments, book appointments, or get answers to your dental questions.",
+      timestamp: new Date(),
+    },
+  ]);
+
   useEffect(() => {
-    const pathname = window.location.pathname;
-    const isSensitivePage = pathname.includes("/book") ||
-      pathname.includes("/appointment") ||
-      pathname.includes("/payment") ||
-      pathname.includes("/login") ||
-      pathname.includes("/register") ||
-      pathname.includes("/signup");
+    if (shouldHide) {
+      setIsOpen(false);
+      return;
+    }
 
-    if (!hasAutoOpened && !isSensitivePage) {
+    if (!hasAutoOpened && window.innerWidth >= 1024) {
       const timer = setTimeout(() => {
         setIsOpen(true);
         setHasAutoOpened(true);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [hasAutoOpened]);
+  }, [hasAutoOpened, shouldHide]);
 
-  // -- Auto-focus input when opening
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isOpen]);
 
-  // -- Scroll to bottom when new message arrives
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // -- Clear badge when user opens chat
   const handleToggleChat = useCallback(() => {
     setIsOpen((prev) => !prev);
     if (!isOpen) setShowBadge(false);
   }, [isOpen]);
 
-  // -- Send message to AI backend
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!content.trim() || isLoading) return;
@@ -148,8 +145,7 @@ export default function ChatWidget() {
           {
             id: (Date.now() + 1).toString(),
             role: "assistant",
-            content:
-              "Sorry, I'm having trouble connecting. Please try again later.",
+            content: "Sorry, I'm having trouble connecting. Please try again later.",
             timestamp: new Date(),
           },
         ]);
@@ -160,34 +156,34 @@ export default function ChatWidget() {
     [isLoading, messages, user]
   );
 
-  // -- Quick reply handler
   const handleQuickReply = (text: string) => {
-    handleSendMessage(text);
+    void handleSendMessage(text);
   };
 
-  // -- Keyboard submit
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage(inputValue);
+      void handleSendMessage(inputValue);
     }
   };
 
-  // -- CTA button handler
   const handleCTAClick = (href: string) => {
     router.push(href);
     setIsOpen(false);
   };
 
+  if (shouldHide) {
+    return null;
+  }
+
   return (
     <>
-      {/* Floating chat button */}
       <button
         onClick={handleToggleChat}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all hover:scale-110 hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-primary/30"
+        className="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all hover:scale-105 hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-primary/30 sm:bottom-6 sm:right-6 sm:h-14 sm:w-14"
         aria-label="Toggle chat"
       >
-        {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
+        {isOpen ? <X size={22} /> : <MessageCircle size={22} />}
         {showBadge && !isOpen && (
           <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold">
             1
@@ -195,19 +191,17 @@ export default function ChatWidget() {
         )}
       </button>
 
-      {/* Chat window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 flex h-[600px] w-[400px] flex-col rounded-2xl bg-white shadow-2xl">
-          {/* Header */}
+        <div className="fixed inset-x-3 bottom-20 z-50 flex h-[min(70vh,32rem)] flex-col rounded-2xl bg-white shadow-2xl sm:inset-x-auto sm:right-6 sm:bottom-24 sm:w-[22rem]">
           <div
-            className="flex items-center justify-between rounded-t-2xl px-5 py-4 text-white"
-            style={{ background: 'var(--primary)' }}
+            className="flex items-center justify-between rounded-t-2xl px-4 py-3 text-white sm:px-5 sm:py-4"
+            style={{ background: "var(--primary)" }}
           >
             <div className="flex items-center gap-3">
-              <Bot size={24} />
+              <Bot size={22} />
               <div>
-                <h3 className="font-semibold">SmileCare Assistant</h3>
-                <p className="text-xs text-white/70">Always here to help</p>
+                <h3 className="font-semibold text-sm sm:text-base">SmileCare Assistant</h3>
+                <p className="text-[11px] text-white/70 sm:text-xs">Always here to help</p>
               </div>
             </div>
             <button
@@ -215,28 +209,23 @@ export default function ChatWidget() {
               className="rounded-full p-1 transition-colors hover:bg-white/20"
               aria-label="Close chat"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 sm:p-4 sm:space-y-4">
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"
-                  }`}
+                className={`flex gap-2 sm:gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {msg.role === "assistant" && (
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <Bot size={16} className="text-primary" />
+                  <div className="mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 sm:h-8 sm:w-8">
+                    <Bot size={15} className="text-primary" />
                   </div>
                 )}
                 <div
-                  className={`max-w-[75%] rounded-2xl px-4 py-3 ${msg.role === "user"
-                    ? "bg-primary text-white"
-                    : "bg-gray-100 text-gray-900"
-                    }`}
+                  className={`max-w-[82%] rounded-2xl px-3 py-2.5 text-sm sm:max-w-[78%] sm:px-4 sm:py-3 ${msg.role === "user" ? "bg-primary text-white" : "bg-gray-100 text-gray-900"}`}
                 >
                   {msg.isEmergency && (
                     <div className="mb-2 flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -245,7 +234,7 @@ export default function ChatWidget() {
                     </div>
                   )}
 
-                  <div className="prose prose-sm max-w-none">
+                  <div className="prose prose-sm max-w-none break-words">
                     <ReactMarkdown
                       components={{
                         p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
@@ -263,10 +252,7 @@ export default function ChatWidget() {
                   {msg.cta && (
                     <button
                       onClick={() => handleCTAClick(msg.cta!.href)}
-                      className={`mt-3 flex w-full items-center justify-between rounded-lg px-4 py-2 text-sm font-medium transition-colors ${msg.cta.variant === "primary"
-                        ? "bg-primary text-white hover:opacity-90"
-                        : "border border-primary text-primary hover:bg-primary/5"
-                        }`}
+                      className={`mt-3 flex w-full items-center justify-between rounded-lg px-4 py-2 text-sm font-medium transition-colors ${msg.cta.variant === "primary" ? "bg-primary text-white hover:opacity-90" : "border border-primary text-primary hover:bg-primary/5"}`}
                     >
                       <span>{msg.cta.label}</span>
                       <ChevronRight size={16} />
@@ -274,21 +260,20 @@ export default function ChatWidget() {
                   )}
                 </div>
                 {msg.role === "user" && (
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary">
-                    <User size={16} className="text-white" />
+                  <div className="mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary sm:h-8 sm:w-8">
+                    <User size={15} className="text-white" />
                   </div>
                 )}
               </div>
             ))}
 
-            {/* Quick replies (show only after greeting) */}
             {messages.length === 1 && (
-              <div className="flex flex-wrap gap-2 pt-2">
+              <div className="flex flex-wrap gap-2 pt-1">
                 {QUICK_REPLIES.map((reply) => (
                   <button
                     key={reply}
                     onClick={() => handleQuickReply(reply)}
-                    className="rounded-full border border-primary px-4 py-2 text-sm text-primary transition-colors hover:bg-primary/5"
+                    className="rounded-full border border-primary px-3 py-1.5 text-xs text-primary transition-colors hover:bg-primary/5 sm:px-4 sm:py-2 sm:text-sm"
                   >
                     {reply}
                   </button>
@@ -296,11 +281,10 @@ export default function ChatWidget() {
               </div>
             )}
 
-            {/* Loading indicator */}
             {isLoading && (
               <div className="flex gap-3">
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <Bot size={16} className="text-primary" />
+                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 sm:h-8 sm:w-8">
+                  <Bot size={15} className="text-primary" />
                 </div>
                 <div className="flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-3">
                   <Loader2 size={16} className="animate-spin text-primary" />
@@ -311,8 +295,7 @@ export default function ChatWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input area */}
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-gray-200 p-3 sm:p-4">
             <div className="flex items-end gap-2">
               <textarea
                 ref={inputRef}
@@ -321,10 +304,10 @@ export default function ChatWidget() {
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
                 rows={1}
-                className="flex-1 resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="min-h-11 flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 sm:px-4 sm:py-3"
               />
               <button
-                onClick={() => handleSendMessage(inputValue)}
+                onClick={() => void handleSendMessage(inputValue)}
                 disabled={!inputValue.trim() || isLoading}
                 className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-primary text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Send message"
@@ -332,7 +315,7 @@ export default function ChatWidget() {
                 <Send size={18} />
               </button>
             </div>
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-[11px] text-gray-500 sm:text-xs">
               Press Enter to send, Shift+Enter for new line
             </p>
           </div>
@@ -341,6 +324,3 @@ export default function ChatWidget() {
     </>
   );
 }
-
-
-

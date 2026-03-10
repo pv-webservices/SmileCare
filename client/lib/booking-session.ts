@@ -4,6 +4,7 @@ import type { PatientDetails } from "@/components/booking/PatientDetailsStep";
 
 const PENDING_BOOKING_KEY = "pendingBooking";
 const PAYMENT_SESSION_KEY = "smilecare_payment";
+const PAYMENT_VERIFICATION_KEY = "smilecare_payment_verification";
 
 export interface PendingBooking {
     currentStep: number;
@@ -45,6 +46,17 @@ export interface PaymentSession {
     patient: PatientDetails | null;
 }
 
+export interface PendingPaymentVerification {
+    orderId: string;
+    slotId: string;
+    treatmentId: string;
+    sessionId: string;
+    idempotencyKey: string;
+    amount: number;
+    razorpayPaymentId?: string;
+    razorpaySignature?: string;
+}
+
 function safeRead<T>(key: string): T | null {
     if (typeof window === "undefined") return null;
     try {
@@ -84,4 +96,17 @@ export function setPaymentSession(value: PaymentSession) {
 export function clearPaymentSession() {
     if (typeof window === "undefined") return;
     sessionStorage.removeItem(PAYMENT_SESSION_KEY);
+}
+
+export function getPendingPaymentVerification(): PendingPaymentVerification | null {
+    return safeRead<PendingPaymentVerification>(PAYMENT_VERIFICATION_KEY);
+}
+
+export function setPendingPaymentVerification(value: PendingPaymentVerification) {
+    safeWrite(PAYMENT_VERIFICATION_KEY, value);
+}
+
+export function clearPendingPaymentVerification() {
+    if (typeof window === "undefined") return;
+    sessionStorage.removeItem(PAYMENT_VERIFICATION_KEY);
 }

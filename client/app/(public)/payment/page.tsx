@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Loader2,
   CheckCircle2,
@@ -22,16 +22,19 @@ import {
 } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
+import { getApiBaseUrl } from "@/lib/api-base";
 import { addLocalBooking } from "@/lib/booking-storage";
 import {
   clearPaymentSession,
   clearPendingBooking,
+  clearPendingPaymentVerification,
   getPaymentSession,
+  getPendingPaymentVerification,
   setPaymentSession,
+  setPendingPaymentVerification,
   type PaymentSession,
+  type PendingPaymentVerification,
 } from "@/lib/booking-session";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type PaymentTab = "card" | "upi" | "netbanking" | "wallets";
 type PageState = "loading" | "form" | "processing" | "success" | "expired" | "error";
@@ -48,7 +51,7 @@ const WALLETS = ["Paytm", "PhonePe", "Amazon Pay", "Mobikwik"];
 export default function PaymentPage() {
   const router = useRouter();
   const { success, error: toastError, warning } = useToast();
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const [pageState, setPageState] = useState<PageState>("loading");
   const [paymentData, setPaymentData] = useState<PaymentSession | null>(null);
@@ -66,6 +69,7 @@ export default function PaymentPage() {
   const [paymentId, setPaymentId] = useState("");
   const [bookingId, setBookingId] = useState("");
   const [isPreparingOrder, setIsPreparingOrder] = useState(false);
+  const [isFinalizingStoredPayment, setIsFinalizingStoredPayment] = useState(false);
 
   useEffect(() => {
     const storedSession = getPaymentSession();
@@ -85,22 +89,14 @@ export default function PaymentPage() {
   const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE;
 
   useEffect(() => {
-    if (isLoading || !paymentData) return;
-    if (!isAuthenticated) {
-      const callbackUrl = paymentData.callbackUrl || "/payment";
-      router.replace(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
-    }
-  }, [isAuthenticated, isLoading, paymentData, router]);
-
-  useEffect(() => {
-    if (pageState !== "form" || !paymentData || !isAuthenticated || paymentData.orderId || isPreparingOrder) {
+    if (pageState !== "form" || !paymentData || paymentData.orderId || isPreparingOrder) {
       return;
     }
 
     const prepareOrder = async () => {
       setIsPreparingOrder(true);
       try {
-        const res = await fetch(`${API}/api/payments/create-order`, {
+        const res = await fetch(`${getApiBaseUrl()}/api/payments/create-order`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -131,7 +127,7 @@ export default function PaymentPage() {
     };
 
     void prepareOrder();
-  }, [isAuthenticated, isPreparingOrder, pageState, paymentData, total]);
+  }, [isPreparingOrder, pageState, paymentData, total]);
 
   useEffect(() => {
     if (pageState !== "form") return;
@@ -188,14 +184,15 @@ export default function PaymentPage() {
       paymentStatus: "captured",
       confirmedAt: new Date().toISOString(),
     });
+    clearPendingPaymentVerification();
     clearPaymentSession();
     clearPendingBooking();
     setPageState("success");
     success("Payment Successful!", "Your appointment has been confirmed.");
   }, [paymentData, success, total]);
 
-  const verifyPaymentOnServer = useCallback(async (payload: Record<string, unknown>) => {
-    const res = await fetch(`${API}/api/payments/verify`, {
+  const verifyPaymentOnServer = useCallback(async (payload: PendingPaymentVerification) => {
+    const res = await fetch(`${getApiBaseUrl()}/api/payments/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -207,6 +204,66 @@ export default function PaymentPage() {
     }
     return data;
   }, []);
+
+  const redirectToLoginToFinalize = useCallback((payload: PendingPaymentVerification) => {
+    setPendingPaymentVerification(payload);
+    success("Payment received", "Please sign in or create an account to confirm your booking.");
+    router.replace(`/login?callbackUrl=${encodeURIComponent("/payment")}`);
+  }, [router, success]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !paymentData || pageState !== "form" || isFinalizingStoredPayment) {
+      return;
+    }
+
+    const pendingVerification = getPendingPaymentVerification();
+    if (!pendingVerification || !paymentData.orderId || pendingVerification.orderId !== paymentData.orderId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const finalizePendingPayment = async () => {
+      setIsFinalizingStoredPayment(true);
+      setPageState("processing");
+      setProcessingMsg(PROCESSING_MESSAGES.length - 1);
+      try {
+        const data = await verifyPaymentOnServer(pendingVerification);
+        if (cancelled) return;
+        finalizeSuccess(
+          data.data?.payment?.id || pendingVerification.razorpayPaymentId || `pay_${Date.now()}`,
+          data.data?.booking?.id || `book_${Date.now()}`
+        );
+      } catch (error: any) {
+        if (cancelled) return;
+        setPageState("form");
+        toastError("Verification Failed", error.message || "Payment could not be verified after login.");
+      } finally {
+        if (!cancelled) {
+          setIsFinalizingStoredPayment(false);
+        }
+      }
+    };
+
+    void finalizePendingPayment();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [finalizeSuccess, isAuthenticated, isFinalizingStoredPayment, pageState, paymentData, toastError, verifyPaymentOnServer]);
+
+  const buildVerificationPayload = useCallback((override?: Partial<PendingPaymentVerification>): PendingPaymentVerification | null => {
+    if (!paymentData?.orderId) return null;
+    return {
+      orderId: paymentData.orderId,
+      slotId: paymentData.slotId,
+      treatmentId: paymentData.treatmentId,
+      sessionId: paymentData.sessionId,
+      idempotencyKey: paymentData.idempotencyKey,
+      amount: total,
+      ...override,
+    };
+  }, [paymentData, total]);
 
   const handleRazorpayPay = async () => {
     if (!paymentData?.orderId) return;
@@ -240,16 +297,23 @@ export default function PaymentPage() {
           theme: { color: "#1a3a5c" },
           handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
             try {
-              const data = await verifyPaymentOnServer({
+              const verificationPayload = buildVerificationPayload({
                 orderId: response.razorpay_order_id,
-                slotId: paymentData.slotId,
-                treatmentId: paymentData.treatmentId,
-                sessionId: paymentData.sessionId,
-                idempotencyKey: paymentData.idempotencyKey,
-                amount: total,
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpaySignature: response.razorpay_signature,
               });
+
+              if (!verificationPayload) {
+                throw new Error("Payment session is missing verification data.");
+              }
+
+              if (!isAuthenticated) {
+                redirectToLoginToFinalize(verificationPayload);
+                resolve();
+                return;
+              }
+
+              const data = await verifyPaymentOnServer(verificationPayload);
               finalizeSuccess(
                 data.data?.payment?.id || response.razorpay_payment_id,
                 data.data?.booking?.id || `book_${Date.now()}`
@@ -304,14 +368,17 @@ export default function PaymentPage() {
     clearInterval(msgInterval);
 
     try {
-      const data = await verifyPaymentOnServer({
-        orderId: paymentData.orderId,
-        slotId: paymentData.slotId,
-        treatmentId: paymentData.treatmentId,
-        sessionId: paymentData.sessionId,
-        idempotencyKey: paymentData.idempotencyKey,
-        amount: total,
-      });
+      const verificationPayload = buildVerificationPayload();
+      if (!verificationPayload) {
+        throw new Error("Payment session is missing verification data.");
+      }
+
+      if (!isAuthenticated) {
+        redirectToLoginToFinalize(verificationPayload);
+        return;
+      }
+
+      const data = await verifyPaymentOnServer(verificationPayload);
       finalizeSuccess(
         data.data?.payment?.id || `pay_${Date.now()}`,
         data.data?.booking?.id || `book_${Date.now()}`
@@ -418,7 +485,12 @@ export default function PaymentPage() {
               <h1 className="font-display text-2xl text-primary font-bold">Complete Your Payment</h1>
               <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${timeLeft < 120 ? "bg-red-50 text-red-600" : "bg-primary/5 text-primary/60"}`}><Clock size={13} />{formatTimer(timeLeft)}</div>
             </div>
-            <p className="text-primary/40 text-sm mb-6">Review your booking below, then complete payment to confirm it in your dashboard.</p>
+            <p className="text-primary/40 text-sm mb-3">Review your booking below, then complete payment to confirm it.</p>
+            {!isAuthenticated && (
+              <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                You can pay now without logging in. After payment, we will send you to login or sign up so we can attach the booking to your account.
+              </div>
+            )}
             {isPreparingOrder && <div className="mb-6 rounded-xl border border-primary/10 bg-white px-4 py-3 text-sm text-primary/60 flex items-center gap-2"><Loader2 className="animate-spin" size={16} />Preparing your secure payment order...</div>}
 
             {PAYMENT_MODE !== "razorpay" && (
@@ -463,13 +535,10 @@ export default function PaymentPage() {
               <div className="flex justify-between text-sm"><span className="text-primary/40">Convenience Fee</span><span className="text-emerald-600 font-semibold">INR {convenienceFee.toLocaleString("en-IN")}</span></div>
               <div className="border-t border-primary/10 pt-3 flex justify-between items-baseline"><span className="text-primary font-bold">Total</span><span className="font-display text-3xl font-bold text-primary">INR {total.toLocaleString("en-IN")}</span></div>
             </div>
-            <div className="mt-6 flex items-center gap-2 p-3 bg-emerald-50/50 rounded-xl"><Shield className="text-emerald-500 shrink-0" size={16} /><span className="text-[11px] text-emerald-700 font-medium">This booking will appear in Dashboard to My Bookings right after payment verification.</span></div>
+            <div className="mt-6 flex items-center gap-2 p-3 bg-emerald-50/50 rounded-xl"><Shield className="text-emerald-500 shrink-0" size={16} /><span className="text-[11px] text-emerald-700 font-medium">Your booking will be confirmed right after payment verification and sign-in.</span></div>
           </div>
         </div>
       </div>
     </main>
   );
 }
-
-
-

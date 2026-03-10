@@ -3,11 +3,10 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/api-base";
+import { getPendingBooking } from "@/lib/booking-session";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
-import { getPendingBooking } from "@/lib/booking-session";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 function CallbackContent() {
     const router = useRouter();
@@ -18,25 +17,38 @@ function CallbackContent() {
     useEffect(() => {
         const handleCallback = async () => {
             try {
-                const { data, error: sessionError } = await supabase.auth.getSession();
+                const code = searchParams.get("code");
+                let session = (await supabase.auth.getSession()).data.session;
 
-                if (sessionError || !data.session) {
-                    setError("Failed to authenticate with Google. Please try again.");
-                    setTimeout(() => router.push("/login"), 3000);
-                    return;
+                if (!session && code) {
+                    const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+                    if (exchangeError) {
+                        throw exchangeError;
+                    }
+                    session = data.session;
                 }
 
-                const user = data.session.user;
+                if (!session) {
+                    const { data, error: sessionError } = await supabase.auth.getSession();
+                    if (sessionError) {
+                        throw sessionError;
+                    }
+                    session = data.session;
+                }
+
+                if (!session) {
+                    throw new Error("No Supabase session was created.");
+                }
+
+                const user = session.user;
                 const email = user.email;
                 const name = user.user_metadata?.full_name || user.user_metadata?.name || email?.split("@")[0] || "User";
 
                 if (!email) {
-                    setError("Could not retrieve email from Google. Please try again.");
-                    setTimeout(() => router.push("/login"), 3000);
-                    return;
+                    throw new Error("Could not retrieve email from Google.");
                 }
 
-                const loginRes = await fetch(`${API}/api/auth/google/callback`, {
+                const loginRes = await fetch(`${getApiBaseUrl()}/api/auth/google/callback`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",

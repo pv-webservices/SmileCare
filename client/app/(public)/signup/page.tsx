@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { UserPlus, Loader2, Eye, EyeOff } from "lucide-react";
-import { Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 function SignupForm() {
   const { register, loginWithGoogle } = useAuth();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/dashboard";
+  const redirectTo = searchParams.get("callbackUrl") || searchParams.get("redirect") || "/dashboard";
 
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
   const [showPw, setShowPw] = useState(false);
@@ -24,7 +23,6 @@ function SignupForm() {
     setError("");
     setLoading(true);
     try {
-      // Validate Indian phone number
       const rawPhone = form.phone.replace(/\s/g, "");
       const phoneRegex = /^(\+91)?[6-9]\d{9}$/;
       if (!phoneRegex.test(rawPhone)) {
@@ -32,16 +30,12 @@ function SignupForm() {
         setLoading(false);
         return;
       }
-      // Normalize phone to +91XXXXXXXXXX
-      const normalizedPhone = rawPhone.startsWith("+91") ? rawPhone : `+91${rawPhone}`;
 
-      // Register the user via AuthContext (handles redirect to login + credential pre-fill)
-      const result = await register(form.name, form.email, normalizedPhone, form.password);
+      const normalizedPhone = rawPhone.startsWith("+91") ? rawPhone : `+91${rawPhone}`;
+      const result = await register(form.name, form.email, normalizedPhone, form.password, redirectTo);
       if (!result.success) {
-        // Error already shown via toast in AuthContext
         setLoading(false);
       }
-      // On success, AuthContext handles redirect to /login with pre-filled credentials
     } catch (err: unknown) {
       setError((err instanceof Error ? err.message : "") || "Registration failed. Please try again.");
       setLoading(false);
@@ -51,31 +45,27 @@ function SignupForm() {
   return (
     <main className="min-h-[calc(100vh-5rem)] flex items-center justify-center bg-background-light px-4 py-16">
       <div className="max-w-md w-full bg-pearl rounded-2xl shadow-xl border border-primary/10 p-10">
-        {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block text-3xl font-display font-bold text-primary">
             SmileCare<span className="text-accent-gold">.</span>
           </Link>
         </div>
 
-        {/* Title */}
         <h1 className="font-display text-4xl text-primary text-center">Create Account</h1>
         <p className="text-primary/50 text-center mt-2 font-sans">
           Join the SmileCare experience.
         </p>
 
-        {/* Error */}
         {error && (
           <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium text-center">
             {error}
           </div>
         )}
 
-        {/* Google sign-up */}
         <div className="flex flex-col gap-3 mt-6 mb-6">
           <button
             type="button"
-            onClick={() => loginWithGoogle()}
+            onClick={() => void loginWithGoogle(redirectTo)}
             className="flex items-center justify-center gap-3 w-full border border-slate-200 rounded-xl py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition-all"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -94,7 +84,6 @@ function SignupForm() {
           <div className="flex-1 h-px bg-slate-200" />
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
             <label className="block text-xs font-bold text-primary/40 uppercase tracking-wider mb-2">Full Name</label>
@@ -168,11 +157,10 @@ function SignupForm() {
           </button>
         </form>
 
-        {/* Footer */}
         <p className="text-center text-sm text-slate-500 mt-6">
           Already have an account?{" "}
           <Link
-            href={`/login${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
+            href={`/login?callbackUrl=${encodeURIComponent(redirectTo)}`}
             className="font-bold text-primary hover:underline transition-all"
           >
             Sign in

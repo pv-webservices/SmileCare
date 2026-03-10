@@ -68,13 +68,15 @@ function LoginForm() {
         callbackUrl: redirectTo || pendingBooking.callbackUrl || "/payment",
       });
     }
-    loginWithGoogle(redirectTo || "/dashboard");
+    void loginWithGoogle(redirectTo || "/dashboard");
   };
 
   const clearErrors = () => {
     setError("");
     setNoAccount(false);
   };
+
+  const signupHref = `/register?callbackUrl=${encodeURIComponent(redirectTo)}`;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background-light px-4">
@@ -176,7 +178,7 @@ function LoginForm() {
               <span>No account found.</span>
               <button
                 type="button"
-                onClick={() => router.push("/register")}
+                onClick={() => router.push(signupHref)}
                 className="font-bold underline text-primary hover:no-underline transition-colors ml-1"
               >
                 Create an account
@@ -239,7 +241,7 @@ function LoginForm() {
                 />
                 <path
                   fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84.81-.62z"
                 />
                 <path
                   fill="#EA4335"
@@ -255,7 +257,7 @@ function LoginForm() {
           <p className="text-sm text-slate-600 font-medium">
             Don&apos;t have an account?{" "}
             <Link
-              href="/register"
+              href={signupHref}
               className="font-bold text-primary hover:opacity-80 transition-opacity"
             >
               Sign up

@@ -3,10 +3,9 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { useToast } from "@/context/ToastContext";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { getApiBaseUrl } from "@/lib/api-base";
 import { getPendingBooking } from "@/lib/booking-session";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 interface User {
   id: string;
@@ -21,7 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, phone: string, password: string) => Promise<{ success: boolean; email?: string; password?: string }>;
+  register: (name: string, email: string, phone: string, password: string, callbackUrl?: string) => Promise<{ success: boolean; email?: string; password?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<User | null>;
   loginWithGoogle: (callbackUrl?: string) => Promise<void>;
@@ -37,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
-      const res = await fetch(`${API}/api/auth/me`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/me`, {
         credentials: "include",
       });
 
@@ -63,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const res = await fetch(`${API}/api/auth/login`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -106,9 +105,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, phone: string, password: string): Promise<{ success: boolean; email?: string; password?: string }> => {
+  const register = async (
+    name: string,
+    email: string,
+    phone: string,
+    password: string,
+    callbackUrl = "/dashboard"
+  ): Promise<{ success: boolean; email?: string; password?: string }> => {
     try {
-      const res = await fetch(`${API}/api/auth/register`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -129,20 +134,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sessionStorage.setItem("smilecare_prefill", JSON.stringify({ email, password }));
       }
 
+      const target = callbackUrl || "/dashboard";
+      const nextUrl = `/login?registered=1&callbackUrl=${encodeURIComponent(target)}`;
+
       setTimeout(() => {
-        router.push("/login");
+        router.push(nextUrl);
       }, 1500);
 
       return { success: true, email, password };
     } catch (err: unknown) {
       console.error("Registration error:", err);
-      return { success: false }; 
+      return { success: false };
     }
   };
 
   const logout = async () => {
     try {
-      await fetch(`${API}/api/auth/logout`, {
+      await fetch(`${getApiBaseUrl()}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
@@ -161,6 +169,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithGoogle = async (callbackUrl = "/dashboard") => {
     try {
+      if (!isSupabaseConfigured) {
+        toastError("Google sign-in is not configured yet. Please try email login or add the Supabase public env vars.");
+        return;
+      }
+
       const pendingBooking = getPendingBooking();
       const target = pendingBooking?.callbackUrl || callbackUrl;
 
