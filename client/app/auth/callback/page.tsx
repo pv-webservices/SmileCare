@@ -8,6 +8,35 @@ import { getPendingBooking } from "@/lib/booking-session";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
+async function loginWithOAuthPassword(email: string, password: string) {
+    const response = await fetch(`${getApiBaseUrl()}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    return { response, payload };
+}
+
+async function registerOAuthUser(name: string, email: string, password: string) {
+    const response = await fetch(`${getApiBaseUrl()}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+            name,
+            email,
+            phone: "",
+            password,
+        }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    return { response, payload };
+}
+
 function CallbackContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -48,19 +77,19 @@ function CallbackContent() {
                     throw new Error("Could not retrieve email from Google.");
                 }
 
-                const loginRes = await fetch(`${getApiBaseUrl()}/api/auth/google`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        email,
-                        name,
-                        provider: "google",
-                        providerId: user.id,
-                    }),
-                });
+                const oauthPassword = `oauth_${email}`;
+                let { response: loginRes, payload } = await loginWithOAuthPassword(email, oauthPassword);
 
-                const payload = await loginRes.json().catch(() => ({}));
+                if (loginRes.status === 404) {
+                    const { response: registerRes, payload: registerPayload } = await registerOAuthUser(name, email, oauthPassword);
+                    if (!registerRes.ok && registerRes.status !== 400) {
+                        throw new Error(registerPayload.message || "Google sign-in could not create your account.");
+                    }
+
+                    const retry = await loginWithOAuthPassword(email, oauthPassword);
+                    loginRes = retry.response;
+                    payload = retry.payload;
+                }
 
                 if (!loginRes.ok) {
                     throw new Error(payload.message || "Google sign-in could not be completed.");
