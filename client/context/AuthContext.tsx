@@ -28,6 +28,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function getStoredAccessToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return localStorage.getItem("smilecare_token");
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,14 +44,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
+      const token = getStoredAccessToken();
       const res = await fetch(`${getApiBaseUrl()}/api/auth/me`, {
         credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 
       if (res.ok) {
         const data = (await res.json()) as User;
         setUser(data);
         return data;
+      }
+
+      if (res.status !== 401) {
+        console.warn("Failed to refresh user", res.status);
       }
 
       setUser(null);

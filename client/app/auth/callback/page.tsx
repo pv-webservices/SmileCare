@@ -48,7 +48,7 @@ function CallbackContent() {
                     throw new Error("Could not retrieve email from Google.");
                 }
 
-                const loginRes = await fetch(`${getApiBaseUrl()}/api/auth/google/callback`, {
+                const loginRes = await fetch(`${getApiBaseUrl()}/api/auth/google`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",

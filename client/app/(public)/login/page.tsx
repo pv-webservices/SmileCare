@@ -190,10 +190,10 @@ function LoginForm() {
           <div className="flex items-center justify-between">
             <div className="text-sm">
               <Link
-                href="/forgot-password"
+                href="/contact"
                 className="font-medium text-primary hover:opacity-80 transition-opacity"
               >
-                Forgot your password?
+                Need help signing in?
               </Link>
             </div>
           </div>
@@ -282,3 +282,4 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+

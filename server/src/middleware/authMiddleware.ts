@@ -8,8 +8,22 @@ export interface AuthRequest extends Request {
     };
 }
 
+function getAccessToken(req: Request) {
+    const cookieToken = req.cookies?.accessToken;
+    if (cookieToken) {
+        return cookieToken;
+    }
+
+    const authHeader = req.headers.authorization;
+    if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+        return authHeader.slice(7).trim();
+    }
+
+    return null;
+}
+
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
-    const token = req.cookies.accessToken;
+    const token = getAccessToken(req);
 
     if (!token) {
         return res.status(401).json({ message: 'Unauthorized' });
