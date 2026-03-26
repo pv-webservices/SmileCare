@@ -4,25 +4,7 @@ import React from "react";
 import { Stethoscope, CheckCircle2 } from "lucide-react";
 import { Treatment } from "@/lib/booking.api";
 
-/**
- * Normalise any price string to INR display format.
- * "$299" → "₹299"  "₹299" → "₹299"  "299" → "₹299"
- * "From $500" → "From ₹500"
- */
-function toINR(priceRange: string): string {
-  if (!priceRange) return "";
-  // Replace any currency symbol ($ £ € etc.) with ₹
-  return priceRange.replace(/[$£€]/g, "₹");
-}
-
-interface TreatmentStepProps {
-  treatments: Treatment[];
-  selectedId: string | null;
-  onSelect: (treatment: Treatment) => void;
-  isLoading: boolean;
-}
-
-function TreatmentStep({ treatments, selectedId, onSelect, isLoading }: TreatmentStepProps) {
+/unction TreatmentStep({ treatments, selectedId, onSelect, isLoading }: TreatmentStepProps) {
   if (isLoading) {
     return (
       <section>
@@ -92,14 +74,6 @@ function TreatmentStep({ treatments, selectedId, onSelect, isLoading }: Treatmen
               </div>
 
               <div className="mt-4 pt-4 border-t border-slate-100">
-                <p className="text-sm font-bold text-primary">
-                  {toINR(treatment.priceRange)}
-                </p>
-              </div>
-            </button>
-          );
-        })}
-      </div>
     </section>
   );
 }
