@@ -64,7 +64,6 @@ export async function holdSlot(req: Request, res: Response) {
             const status = statusMap[error.code] || 400;
             return res.status(status).json(errorResponse(error.code, error.message));
         }
-
         console.error("[HOLD_SLOT_ERROR]", error);
         return res.status(500).json(
             errorResponse("INTERNAL_ERROR", "Failed to hold slot")
@@ -96,7 +95,6 @@ export async function createBooking(req: AuthRequest, res: Response) {
         }
 
         const result = await bookingService.createBooking(body, patient.id);
-
         const status = result.isIdempotent ? 200 : 201;
         return res.status(status).json(successResponse(result.booking));
     } catch (error) {
@@ -111,7 +109,6 @@ export async function createBooking(req: AuthRequest, res: Response) {
             const status = statusMap[error.code] || 400;
             return res.status(status).json(errorResponse(error.code, error.message));
         }
-
         console.error("[CREATE_BOOKING_ERROR]", error);
         return res.status(500).json(
             errorResponse("INTERNAL_ERROR", "Failed to create booking")
@@ -151,7 +148,6 @@ export async function rescheduleBooking(req: AuthRequest, res: Response) {
             const status = statusMap[error.code] || 400;
             return res.status(status).json(errorResponse(error.code, error.message));
         }
-
         console.error("[RESCHEDULE_BOOKING_ERROR]", error);
         return res.status(500).json(
             errorResponse("INTERNAL_ERROR", "Failed to reschedule booking")
@@ -162,7 +158,13 @@ export async function rescheduleBooking(req: AuthRequest, res: Response) {
 export async function cancelBooking(req: AuthRequest, res: Response) {
     try {
         const { id } = req.params;
-        const { reason, adminOverride } = req.body as CancelBody;
+        const { reason } = req.body as CancelBody;
+
+        // Security: adminOverride must only come from verified admin users.
+        // Never accept adminOverride from the request body without role verification.
+        const adminOverride = req.user!.role === "admin"
+            ? (req.body as CancelBody).adminOverride
+            : false;
 
         const result = await bookingService.cancelBooking(
             id,
@@ -187,7 +189,6 @@ export async function cancelBooking(req: AuthRequest, res: Response) {
             const status = statusMap[error.code] || 400;
             return res.status(status).json(errorResponse(error.code, error.message));
         }
-
         console.error("[CANCEL_BOOKING_ERROR]", error);
         return res.status(500).json(
             errorResponse("INTERNAL_ERROR", "Failed to cancel booking")
@@ -211,32 +212,29 @@ export async function getMyBookings(req: AuthRequest, res: Response) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const where: any = { patientId: patient.id };
-        let orderBy: any[] = [{ slot: { date: "desc" } }, { slot: { startTime: "desc" } }];
+        // Use typed where clause instead of 'any'
+        const where: Parameters<typeof prisma.booking.findMany>[0]["where"] & { patientId: string } = {
+            patientId: patient.id,
+        };
+        let orderBy: { slot: { date: "asc" | "desc" } }[] = [{ slot: { date: "desc" } }];
 
         if (filter === "upcoming") {
-            where.status = { in: ["confirmed", "pending_payment"] };
-            where.slot = { date: { gte: today } };
-            orderBy = [{ slot: { date: "asc" } }, { slot: { startTime: "asc" } }];
+            (where as any).status = { in: ["confirmed", "pending_payment"] };
+            (where as any).slot = { date: { gte: today } };
+            orderBy = [{ slot: { date: "asc" } }];
         } else if (filter === "history" || filter === "past") {
-            where.OR = [
+            (where as any).OR = [
                 { status: { in: ["completed", "cancelled", "no_show", "refunded", "refund_pending"] } },
                 { slot: { date: { lt: today } } },
             ];
         } else if (filter) {
-            where.status = filter;
+            (where as any).status = filter;
         }
 
         const bookings = await prisma.booking.findMany({
             where,
             include: {
-                slot: {
-                    include: {
-                        dentist: {
-                            include: { user: true }
-                        }
-                    }
-                },
+                slot: { include: { dentist: { include: { user: true } } } },
                 treatment: true,
                 payment: true
             },
