@@ -20,7 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, phone: string, password: string, callbackUrl?: string) => Promise<{ success: boolean; email?: string; password?: string }>;
+  register: (name: string, email: string, phone: string, password: string, callbackUrl?: string) => Promise<{ success: boolean; email?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<User | null>;
   loginWithGoogle: (callbackUrl?: string) => Promise<void>;
@@ -28,12 +28,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function getStoredAccessToken() {
-  if (typeof window === "undefined") {
-    return null;
-  }
+// Sets a lightweight non-HttpOnly cookie that middleware can read to check
+// auth status. The actual JWT is in the HttpOnly 'accessToken' cookie managed
+// server-side. Never store the JWT itself in a readable cookie.
+function setAuthFlagCookie() {
+  if (typeof document === "undefined") return;
+  document.cookie = "smilecare_auth=1; path=/; SameSite=Lax; max-age=604800";
+}
 
-  return localStorage.getItem("smilecare_token");
+function clearAuthFlagCookie() {
+  if (typeof document === "undefined") return;
+  document.cookie = "smilecare_auth=; path=/; SameSite=Lax; max-age=0";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -44,26 +49,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
-      const token = getStoredAccessToken();
       const res = await fetch(`${getApiBaseUrl()}/api/auth/me`, {
         credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 
       if (res.ok) {
         const data = (await res.json()) as User;
         setUser(data);
+        setAuthFlagCookie();
         return data;
       }
-
       if (res.status !== 401) {
         console.warn("Failed to refresh user", res.status);
       }
-
       setUser(null);
+      clearAuthFlagCookie();
       return null;
     } catch {
       setUser(null);
+      clearAuthFlagCookie();
       return null;
     } finally {
       setIsLoading(false);
@@ -82,34 +86,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: "include",
         body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
         const apiMessage = data.message || data.error || "Login failed";
         const msg = String(apiMessage).toLowerCase();
-
         if (res.status === 404 || msg.includes("not found") || msg.includes("no user") || msg.includes("does not exist")) {
           throw { type: "USER_NOT_FOUND", message: apiMessage };
         }
-
         if (res.status === 401 || msg.includes("incorrect") || msg.includes("invalid")) {
           throw { type: "INVALID_CREDENTIALS", message: apiMessage };
         }
-
         throw new Error(apiMessage);
       }
-
-      if (data.token && typeof window !== "undefined") {
-        localStorage.setItem("smilecare_token", data.token);
-      }
-
+      // Set user from response immediately (avoid double network call)
       if (data.user) {
         setUser(data.user as User);
       }
-
-      await refreshUser();
-
+      // Set auth flag cookie so middleware can guard protected routes
+      setAuthFlagCookie();
+      // Clean up any old prefill data
       if (typeof window !== "undefined") {
         sessionStorage.removeItem("smilecare_prefill");
       }
@@ -125,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     phone: string,
     password: string,
     callbackUrl = "/dashboard"
-  ): Promise<{ success: boolean; email?: string; password?: string }> => {
+  ): Promise<{ success: boolean; email?: string }> => {
     try {
       const res = await fetch(`${getApiBaseUrl()}/api/auth/register`, {
         method: "POST",
@@ -133,29 +128,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: "include",
         body: JSON.stringify({ name, email, phone, password }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
         const msg = data.message || data.error || "Registration failed";
         toastError(msg);
         throw new Error(msg);
       }
-
       success("Registration successful! Redirecting to login...");
-
+      // Store ONLY the email for prefill (never store password)
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("smilecare_prefill", JSON.stringify({ email, password }));
+        sessionStorage.setItem("smilecare_prefill", JSON.stringify({ email }));
       }
-
       const target = callbackUrl || "/dashboard";
       const nextUrl = `/login?registered=1&callbackUrl=${encodeURIComponent(target)}`;
-
       setTimeout(() => {
         router.push(nextUrl);
       }, 1500);
-
-      return { success: true, email, password };
+      // Return only email, never password
+      return { success: true, email };
     } catch (err: unknown) {
       console.error("Registration error:", err);
       return { success: false };
@@ -169,9 +159,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: "include",
       });
       setUser(null);
+      clearAuthFlagCookie();
       if (typeof window !== "undefined") {
         sessionStorage.removeItem("smilecare_prefill");
-        localStorage.removeItem("smilecare_token");
       }
       success("Logged out successfully!");
       router.push("/");
@@ -184,13 +174,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = async (callbackUrl = "/dashboard") => {
     try {
       if (!isSupabaseConfigured) {
-        toastError("Google sign-in is not configured yet. Please try email login or add the Supabase public env vars.");
+        toastError(
+          "Google sign-in is not configured yet. Please try email login or add the Supabase public env vars."
+        );
         return;
       }
-
       const pendingBooking = getPendingBooking();
       const target = pendingBooking?.callbackUrl || callbackUrl;
-
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
