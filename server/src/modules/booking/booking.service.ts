@@ -10,6 +10,8 @@ import {
     REFUND_ELIGIBLE_HOURS,
     calculateRefundEligibility,
 } from './booking.types';
+import { createCalendarEvent } from './calendar.service';
+import { sendBookingConfirmationEmail } from './email.service';
 
 // Transaction client type — allows callers to pass their own transaction
 type TxClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0];
@@ -108,6 +110,54 @@ export async function createBooking(
                 heldBySessionId: null,
                 version: { increment: 1 },
             },
+
+                // ── Post-booking actions: Calendar + Email ────────────────────
+    // Fire and forget - don't block on calendar/email failures
+    void (async () => {
+      try {
+        const patient = await tx.patient.findUnique({
+          where: { id: patientId },
+          include: { user: true },
+        });
+
+        if (patient) {
+          const y = booking.slot.date.getFullYear();
+          const mo = String(booking.slot.date.getMonth() + 1).padStart(2, '0');
+          const dy = String(booking.slot.date.getDate()).padStart(2, '0');
+          const dateStr = `${y}-${mo}-${dy}`;
+          const formattedDate = booking.slot.date.toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          });
+
+          // Create calendar event
+          await createCalendarEvent({
+            patientName: patient.user.name || 'Patient',
+            patientEmail: patient.user.email,
+            treatmentName: booking.treatment.name,
+            specialistName: booking.slot.dentist.user.name || 'Doctor',
+            date: dateStr,
+            startTime: booking.slot.startTime,
+            endTime: booking.slot.endTime,
+            bookingId: booking.id,
+          });
+
+          // Send confirmation email
+          await sendBookingConfirmationEmail({
+            patientName: patient.user.name || 'Patient',
+            patientEmail: patient.user.email,
+            treatmentName: booking.treatment.name,
+            specialistName: booking.slot.dentist.user.name || 'Doctor',
+            date: formattedDate,
+            startTime: booking.slot.startTime,
+            bookingId: booking.id,
+          });
+        }
+      } catch (err) {
+        console.error('[POST_BOOKING_ERROR]', err);
+      }
+    })();
         });
 
         console.log(
