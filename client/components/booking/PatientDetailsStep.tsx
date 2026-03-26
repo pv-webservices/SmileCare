@@ -1,13 +1,7 @@
 "use client";
+
 import { useState, useEffect } from "react";
-import {
-  User,
-  Phone,
-  Mail,
-  MessageSquare,
-  ArrowRight,
-  Info,
-} from "lucide-react";
+import { User, Phone, Mail, MessageSquare, CheckCircle, Info } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export interface PatientDetails {
@@ -20,14 +14,15 @@ export interface PatientDetails {
 interface PatientDetailsStepProps {
   onSubmit: (details: PatientDetails) => void | Promise<void>;
   initial?: PatientDetails | null;
+  isSubmitting?: boolean;
 }
 
 export default function PatientDetailsStep({
   onSubmit,
   initial,
+  isSubmitting = false,
 }: PatientDetailsStepProps) {
   const { user } = useAuth();
-
   const [form, setForm] = useState<PatientDetails>({
     name: initial?.name ?? "",
     phone: initial?.phone ?? "+91 ",
@@ -35,35 +30,28 @@ export default function PatientDetailsStep({
     notes: initial?.notes ?? "",
   });
 
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof PatientDetails, string>>
-  >({});
+  const [errors, setErrors] = useState<Partial<Record<keyof PatientDetails, string>>>({});
 
   useEffect(() => {
     if (!user) return;
     setForm((prev) => ({
       ...prev,
       name: prev.name || user.name || "",
-      phone: prev.phone === "+91 " ? (user.phone || "+91 ") : prev.phone,
+      phone: prev.phone === "+91 " ? user.phone || "+91 " : prev.phone,
       email: prev.email || user.email || "",
     }));
   }, [user]);
 
   const validate = (): boolean => {
     const errs: Partial<Record<keyof PatientDetails, string>> = {};
-
     if (!form.name.trim()) errs.name = "Full name is required";
-
-    if (!form.phone.trim() || form.phone.trim() === "+91") {
+    if (!form.phone.trim() || form.phone.trim() === "+91")
       errs.phone = "Phone number is required";
-    } else if (!/^\+91\s?[6-9]\d{9}$/.test(form.phone.trim().replace(/\s+/g, " "))) {
+    else if (!/^\+91\s?[6-9]\d{9}$/.test(form.phone.trim().replace(/\s/g, "")))
       errs.phone = "Enter a valid Indian phone number (e.g., +91 9876543210)";
-    }
-
     if (!form.email.trim()) errs.email = "Email address is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       errs.email = "Enter a valid email address";
-
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -77,15 +65,12 @@ export default function PatientDetailsStep({
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
-    const stripped = rawValue.replace(/^\+91\s*/, "").replace(/\D/g, "").slice(0, 10);
-    setForm((p) => ({ ...p, phone: `+91 ${stripped}` }));
+    const stripped = rawValue.replace("+91", "").replace(/\D/g, "").slice(0, 10);
+    setForm((p) => ({ ...p, phone: "+91 " + stripped }));
   };
 
   const base =
-    "w-full px-4 py-3.5 rounded-xl border bg-white text-slate-900 " +
-    "font-medium placeholder:text-slate-300 focus:outline-none " +
-    "focus:ring-2 focus:ring-primary/20 focus:border-primary/30 " +
-    "transition-all text-sm";
+    "w-full px-4 py-3.5 rounded-xl border bg-white text-slate-900 font-medium placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all text-sm";
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-2xl mx-auto">
@@ -102,21 +87,21 @@ export default function PatientDetailsStep({
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
+          {/* Name */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+            abel className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
               <User size={16} />
               Full Name
             </label>
             <input
               type="text"
               value={form.name}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, name: e.target.value }))
-              }
+              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
               placeholder="Your full name"
               autoComplete="name"
-              className={`${base} ${errors.name ? "border-red-300" : "border-slate-200"
-                }`}
+              className={`${base} ${
+                errors.name ? "border-red-300" : "border-slate-200"
+              }`}
             />
             {errors.name && (
               <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
@@ -125,8 +110,9 @@ export default function PatientDetailsStep({
             )}
           </div>
 
+          {/* Phone */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+            abel className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
               <Phone size={16} />
               Phone Number
             </label>
@@ -137,8 +123,9 @@ export default function PatientDetailsStep({
               maxLength={14}
               placeholder="+91 9876543210"
               autoComplete="tel"
-              className={`${base} ${errors.phone ? "border-red-300" : "border-slate-200"
-                }`}
+              className={`${base} ${
+                errors.phone ? "border-red-300" : "border-slate-200"
+              }`}
             />
             {errors.phone && (
               <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
@@ -147,21 +134,21 @@ export default function PatientDetailsStep({
             )}
           </div>
 
+          {/* Email */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+            abel className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
               <Mail size={16} />
               Email Address
             </label>
             <input
               type="email"
               value={form.email}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, email: e.target.value }))
-              }
+              onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
               placeholder="you@example.com"
               autoComplete="email"
-              className={`${base} ${errors.email ? "border-red-300" : "border-slate-200"
-                }`}
+              className={`${base} ${
+                errors.email ? "border-red-300" : "border-slate-200"
+              }`}
             />
             {errors.email && (
               <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
@@ -175,19 +162,16 @@ export default function PatientDetailsStep({
             )}
           </div>
 
+          {/* Notes */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+            abel className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
               <MessageSquare size={16} />
               Special Notes{" "}
-              <span className="text-xs font-normal text-slate-400">
-                (Optional)
-              </span>
+              <span className="text-xs font-normal text-slate-400">(Optional)</span>
             </label>
             <textarea
               value={form.notes}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, notes: e.target.value }))
-              }
+              onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
               placeholder="Allergies, anxiety, accessibility needs..."
               rows={4}
               className={`${base} resize-none border-slate-200`}
@@ -206,10 +190,20 @@ export default function PatientDetailsStep({
         <div className="mt-8 flex justify-end">
           <button
             type="submit"
-            className="flex items-center gap-2.5 bg-primary text-white px-4 sm:px-8 py-4 rounded-xl font-bold text-base shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all"
+            disabled={isSubmitting}
+            className="flex items-center gap-2.5 bg-primary text-white px-4 sm:px-8 py-4 rounded-xl font-bold text-base shadow-lg shadow-primary/20 hover:opacity-90 active:scale-0.98 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Continue to Payment
-            <ArrowRight size={18} />
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                Confirming...
+              </>
+            ) : (
+              <>
+                Confirm Booking
+                <CheckCircle size={18} />
+              </>
+            )}
           </button>
         </div>
       </form>
