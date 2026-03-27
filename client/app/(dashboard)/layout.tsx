@@ -2,28 +2,20 @@
 
 import React, { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/dashboard/Sidebar";
 import { Loader2 } from "lucide-react";
 
-export default function DashboardLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     const { isLoading, isAuthenticated } = useAuth();
     const pathname = usePathname();
 
     useEffect(() => {
-        // Only redirect after auth check is complete
         if (!isLoading && !isAuthenticated) {
-            // Use window.location for hard redirect - ensures clean
-            // navigation that works correctly with cross-origin cookies
-            window.location.href = `/login?redirect=${encodeURIComponent(pathname)}`;
+            window.location.href = `/?authRequired=1`;
         }
     }, [isLoading, isAuthenticated, pathname]);
 
-    // Show spinner while checking auth state
     if (isLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center">
@@ -32,7 +24,6 @@ export default function DashboardLayout({
         );
     }
 
-    // Show spinner while redirecting to login (unauthenticated)
     if (!isAuthenticated) {
         return (
             <div className="flex min-h-screen items-center justify-center">
@@ -41,7 +32,6 @@ export default function DashboardLayout({
         );
     }
 
-    // Authenticated - render the dashboard with sidebar
     return (
         <div className="flex min-h-screen bg-gray-50">
             <Sidebar />
@@ -49,5 +39,17 @@ export default function DashboardLayout({
                 {children}
             </main>
         </div>
+    );
+}
+
+export default function DashboardLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    return (
+        <AuthProvider>
+            <DashboardLayoutInner>{children}</DashboardLayoutInner>
+        </AuthProvider>
     );
 }

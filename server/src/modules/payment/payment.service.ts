@@ -232,7 +232,7 @@ export async function verifyRazorpayPayment(
     );
 
     if (!result.isIdempotent) {
-        void handlePostPaymentSideEffects(result.booking.id, result.payment.amount, result.booking.patientId);
+        void handlePostPaymentSideEffects(result.booking.id, result.payment.amount, result.booking.patientId!);
     }
 
     return result;
@@ -307,7 +307,7 @@ export async function verifyMockPayment(
     pendingOrders.delete(orderId);
 
     if (!result.isIdempotent) {
-        void handlePostPaymentSideEffects(result.booking.id, result.payment.amount, result.booking.patientId);
+        void handlePostPaymentSideEffects(result.booking.id, result.payment.amount, result.booking.patientId!);
     }
 
     return result;
@@ -326,6 +326,7 @@ async function handlePostPaymentSideEffects(bookingId: string, amount: number, p
         });
 
         if (!fullBooking) return;
+        if (!fullBooking.patient) return; // Guest booking, skip patient-specific side effects
 
         await Promise.allSettled([
             sendBookingConfirmation({

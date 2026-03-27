@@ -116,6 +116,80 @@ export async function createBooking(req: AuthRequest, res: Response) {
     }
 }
 
+interface GuestBookingBody {
+    slotId: string;
+    treatmentId: string;
+    sessionId: string;
+    idempotencyKey: string;
+    notes?: string;
+    patientName: string;
+    patientPhone: string;
+    patientEmail: string;
+}
+
+export async function createGuestBooking(req: Request, res: Response) {
+    try {
+        const body = req.body as GuestBookingBody;
+
+        // Validate required fields
+        if (!body.slotId || !body.treatmentId || !body.sessionId || !body.idempotencyKey) {
+            return res.status(400).json(
+                errorResponse(
+                    "VALIDATION_ERROR",
+                    "slotId, treatmentId, sessionId, and idempotencyKey are required"
+                )
+            );
+        }
+
+        if (!body.patientName || !body.patientEmail || !body.patientPhone) {
+            return res.status(400).json(
+                errorResponse(
+                    "VALIDATION_ERROR",
+                    "patientName, patientEmail, and patientPhone are required for guest bookings"
+                )
+            );
+        }
+
+        // Validate email format
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.patientEmail)) {
+            return res.status(400).json(
+                errorResponse("VALIDATION_ERROR", "Invalid email address")
+            );
+        }
+
+        // Idempotency check
+        if (body.idempotencyKey) {
+            const existing = await prisma.booking.findUnique({
+                where: { idempotencyKey: body.idempotencyKey },
+                include: { slot: true, treatment: true },
+            });
+            if (existing) {
+                return res.status(200).json(successResponse(existing));
+            }
+        }
+
+        // Create guest booking using a transaction
+        const result = await bookingService.createGuestBooking(body);
+
+        return res.status(201).json(successResponse(result.booking));
+    } catch (error) {
+        if (error instanceof BookingError) {
+            const statusMap: Record<string, number> = {
+                SLOT_NOT_FOUND: 404,
+                SLOT_UNAVAILABLE: 409,
+                HOLD_MISMATCH: 409,
+                HOLD_EXPIRED: 410,
+            };
+            const status = statusMap[error.code] || 400;
+            return res.status(status).json(errorResponse(error.code, error.message));
+        }
+        console.error("[CREATE_GUEST_BOOKING_ERROR]", error);
+        return res.status(500).json(
+            errorResponse("INTERNAL_ERROR", "Failed to create guest booking")
+        );
+    }
+}
+
 export async function rescheduleBooking(req: AuthRequest, res: Response) {
     try {
         const { id } = req.params;

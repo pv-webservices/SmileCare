@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { useAuth } from "@/context/AuthContext";
+
 import { getApiBaseUrl } from "@/lib/api-base";
 import {
   MessageCircle,
@@ -38,11 +38,11 @@ const QUICK_REPLIES = [
   "Clinic hours",
 ];
 
-const HIDDEN_PATH_PREFIXES = ["/booking", "/login", "/register", "/signup", "/auth/callback"];
+const HIDDEN_PATH_PREFIXES = ["/booking"];
 const HIDDEN_PATH_MATCHES = ["/payment"];
 
 export default function ChatWidget() {
-  const { user } = useAuth();
+
   const router = useRouter();
   const pathname = usePathname() || "";
   const [isOpen, setIsOpen] = useState(false);
@@ -118,7 +118,7 @@ export default function ChatWidget() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             message: content.trim(),
-            userId: user?.id || null,
+            userId: null,
             history: messages.map((m) => ({
               role: m.role,
               content: m.content,
@@ -153,7 +153,7 @@ export default function ChatWidget() {
         setIsLoading(false);
       }
     },
-    [isLoading, messages, user]
+    [isLoading, messages]
   );
 
   const handleQuickReply = (text: string) => {

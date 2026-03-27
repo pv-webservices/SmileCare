@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { getApiBaseUrl } from "./api-base";
 
 const CREDS = { credentials: "include" as RequestCredentials };
 
@@ -83,3 +84,27 @@ export const holdSlot = (slotId: string, sessionId: string) =>
 
 export const createBooking = (payload: BookingPayload) =>
     api.post<BookingResponse>("/api/bookings", payload, CREDS);
+
+// ── Calendar Availability API (public, no auth) ───────────────────────────
+
+export async function getAvailableSlots(
+    specialistId: string,
+    date: string
+): Promise<{ availableSlots: Slot[]; bookedSlots: Slot[] }> {
+    const res = await fetch(
+        `${getApiBaseUrl()}/api/calendar/availability?specialistId=${specialistId}&date=${date}`
+    );
+    if (!res.ok) throw new Error("Failed to fetch slots");
+    return res.json();
+}
+
+export async function getAvailableDates(
+    specialistId: string,
+    month: string
+): Promise<{ availableDates: string[] }> {
+    const res = await fetch(
+        `${getApiBaseUrl()}/api/calendar/available-dates?specialistId=${specialistId}&month=${month}`
+    );
+    if (!res.ok) throw new Error("Failed to fetch available dates");
+    return res.json();
+}

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Serif, Noto_Sans } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
 import ChatWidget from "@/components/chatbot";
 
@@ -37,12 +36,10 @@ export default function RootLayout({
         className={`${notoSerif.variable} ${notoSans.variable} antialiased font-body bg-background-light text-slate-900 min-h-screen`}
       >
         <ToastProvider>
-          <AuthProvider>
-            {children}
-            {process.env.NEXT_PUBLIC_CHATBOT_ENABLED === 'true' && (
-              <ChatWidget />
-            )}
-          </AuthProvider>
+          {children}
+          {process.env.NEXT_PUBLIC_CHATBOT_ENABLED === 'true' && (
+            <ChatWidget />
+          )}
         </ToastProvider>
       </body>
     </html>

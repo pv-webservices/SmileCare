@@ -7,7 +7,139 @@ import SpecialistStep from "@/components/booking/SpecialistStep";
 import ScheduleStep from "@/components/booking/ScheduleStep";
 import PatientDetailsStep from "@/components/booking/PatientDetailsStep";
 import BookingSummary from "@/components/booking/BookingSummary";
-import { ChevronRight, AlertCircle, RefreshCw } from "lucide-react";
+import {
+    ChevronRight,
+    AlertCircle,
+    RefreshCw,
+    CheckCircle2,
+    CalendarCheck,
+    Mail,
+    ArrowRight,
+} from "lucide-react";
+
+function BookingConfirmation() {
+    const {
+        bookingResult,
+        selectedTreatment,
+        selectedSpecialist,
+        selectedDate,
+        selectedSlot,
+        patientDetails,
+        resetBooking,
+    } = useBooking();
+
+    const formattedDate = selectedDate
+        ? selectedDate.toLocaleDateString("en-IN", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+          })
+        : "—";
+
+    return (
+        <main className="min-h-screen bg-background-light flex items-center justify-center px-6 py-12">
+            <div className="max-w-lg w-full text-center">
+                <div className="mb-8 flex justify-center">
+                    <div className="relative">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50">
+                            <CheckCircle2
+                                size={40}
+                                className="text-emerald-500"
+                            />
+                        </div>
+                        <div className="absolute inset-0 rounded-full animate-ping bg-emerald-100 opacity-30" />
+                    </div>
+                </div>
+
+                <h1 className="font-display text-4xl font-bold text-slate-900 mb-3">
+                    Booking Confirmed!
+                </h1>
+                <p className="text-slate-500 text-sm mb-8">
+                    Your appointment has been successfully booked.
+                </p>
+
+                {/* Booking Details Card */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm text-left space-y-4 mb-6">
+                    {bookingResult?.id && (
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-500">Booking ID</span>
+                            <span className="font-mono text-xs bg-slate-50 px-3 py-1 rounded-lg text-slate-700">
+                                {bookingResult.id.slice(0, 8).toUpperCase()}
+                            </span>
+                        </div>
+                    )}
+                    {selectedTreatment && (
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-500">Treatment</span>
+                            <span className="font-bold text-slate-900">
+                                {selectedTreatment.name}
+                            </span>
+                        </div>
+                    )}
+                    {selectedSpecialist && (
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-500">Specialist</span>
+                            <span className="font-bold text-slate-900">
+                                {selectedSpecialist.name}
+                            </span>
+                        </div>
+                    )}
+                    <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-500">Date</span>
+                        <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                            <CalendarCheck size={14} className="text-primary" />
+                            {formattedDate}
+                        </span>
+                    </div>
+                    {selectedSlot && (
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-500">Time</span>
+                            <span className="font-bold text-slate-900">
+                                {selectedSlot.startTime}{" "}
+                                {selectedSlot.endTime
+                                    ? `– ${selectedSlot.endTime}`
+                                    : ""}
+                            </span>
+                        </div>
+                    )}
+                    {patientDetails && (
+                        <>
+                            <hr className="border-slate-100" />
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-slate-500">
+                                    Patient Name
+                                </span>
+                                <span className="font-bold text-slate-900">
+                                    {patientDetails.name}
+                                </span>
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* Email notice */}
+                <div className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl text-blue-700 mb-8">
+                    <Mail size={16} />
+                    <p className="text-sm font-medium">
+                        A confirmation email has been sent to{" "}
+                        <span className="font-bold">
+                            {patientDetails?.email || "your email"}
+                        </span>
+                    </p>
+                </div>
+
+                <button
+                    onClick={resetBooking}
+                    className="flex items-center gap-2.5 mx-auto px-8 py-4 rounded-xl bg-primary text-white font-bold text-base shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all"
+                >
+                    Book Another Appointment
+                    <ArrowRight size={18} />
+                </button>
+            </div>
+        </main>
+    );
+}
 
 function BookingPageInner() {
     const {
@@ -46,7 +178,9 @@ function BookingPageInner() {
                     <h2 className="font-display text-2xl font-bold text-slate-900 mb-2">
                         Unable to Load
                     </h2>
-                    <p className="text-slate-500 text-sm mb-6">{catalogError}</p>
+                    <p className="text-slate-500 text-sm mb-6">
+                        {catalogError}
+                    </p>
                     <button
                         onClick={() => window.location.reload()}
                         className="flex items-center gap-2 mx-auto px-6 py-3 rounded-xl bg-primary text-white font-bold hover:opacity-90 transition-all"
@@ -59,22 +193,22 @@ function BookingPageInner() {
         );
     }
 
+    if (step === 5) {
+        return <BookingConfirmation />;
+    }
+
     return (
         <main className="min-h-screen bg-background-light pt-8 pb-20">
             <div className="mx-auto w-full max-w-6xl px-6">
                 <nav className="mb-10 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-300">
-                    <a className="hover:text-primary transition-colors" href="/">
+                    <a
+                        className="hover:text-primary transition-colors"
+                        href="/"
+                    >
                         Home
                     </a>
                     <ChevronRight size={12} />
-                    <a
-                        className="hover:text-primary transition-colors"
-                        href="/dashboard"
-                    >
-                        Appointments
-                    </a>
-                    <ChevronRight size={12} />
-                    <span className="text-slate-700">New Booking</span>
+                    <span className="text-slate-700">Book Appointment</span>
                 </nav>
 
                 <div className="mb-16 text-center lg:text-left">
@@ -116,8 +250,9 @@ function BookingPageInner() {
                             />
                         )}
 
-                        {step === 3 && (
+                        {step === 3 && selectedSpecialist && (
                             <ScheduleStep
+                                specialistId={selectedSpecialist.id}
                                 selectedDate={selectedDate}
                                 onDateSelect={selectDate}
                                 slots={slots}
@@ -127,7 +262,10 @@ function BookingPageInner() {
                                 slotsError={slotsError}
                                 onProceed={() => {
                                     setStep(4);
-                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                    window.scrollTo({
+                                        top: 0,
+                                        behavior: "smooth",
+                                    });
                                 }}
                             />
                         )}
@@ -136,6 +274,7 @@ function BookingPageInner() {
                             <PatientDetailsStep
                                 onSubmit={confirmBooking}
                                 initial={patientDetails}
+                                isSubmitting={isSubmitting}
                             />
                         )}
                     </div>
@@ -167,4 +306,3 @@ export default function BookingPage() {
         </BookingProvider>
     );
 }
-

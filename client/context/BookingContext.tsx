@@ -8,7 +8,6 @@ import {
   useCallback,
   ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
 import {
   getTreatments,
   getSpecialists,
@@ -19,13 +18,8 @@ import {
   type Slot,
 } from "@/lib/booking.api";
 import { useToast } from "@/context/ToastContext";
-import { useAuth } from "@/context/AuthContext";
 import type { PatientDetails } from "@/components/booking/PatientDetailsStep";
-import {
-  getPendingBooking,
-  setPendingBooking,
-  clearPendingBooking,
-} from "@/lib/booking-session";
+import { getApiBaseUrl } from "@/lib/api-base";
 
 function createSessionId() {
   return `sess_${Math.random().toString(36).substring(2, 10)}`;
@@ -50,6 +44,7 @@ interface BookingState {
   sessionId: string;
   isSubmitting: boolean;
   submissionError: string | null;
+  bookingResult: BookingResult | null;
   selectTreatment: (treatment: Treatment) => void;
   selectSpecialist: (specialist: Specialist) => void;
   selectDate: (date: Date) => void;
@@ -61,12 +56,15 @@ interface BookingState {
   goToStep: (step: number) => void;
 }
 
+interface BookingResult {
+  id: string;
+  status: string;
+}
+
 const BookingContext = createContext<BookingState | null>(null);
 
 export function BookingProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const { error: toastError, warning, success } = useToast();
-  const { user, isAuthenticated } = useAuth();
 
   const [step, setStep] = useState(1);
   const [maxReachedStep, setMaxReachedStep] = useState(1);
@@ -86,6 +84,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [sessionId, setSessionId] = useState(createSessionId);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
 
   const goToStep = useCallback((targetStep: number) => {
     if (targetStep <= maxReachedStep) {
@@ -115,44 +114,6 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     };
     void loadCatalog();
   }, [toastError]);
-
-  useEffect(() => {
-    const pending = getPendingBooking();
-    if (!pending) return;
-    try {
-      if (pending.treatment) {
-        setSelectedTreatment(pending.treatment as Treatment);
-      }
-      if (pending.specialist) {
-        setSelectedSpecialist(pending.specialist as Specialist);
-      }
-      if (pending.date) {
-        setSelectedDate(new Date(pending.date));
-      }
-      if (pending.timeSlot) {
-        setSelectedSlot({
-          id: pending.timeSlot.id,
-          startTime: pending.timeSlot.startTime,
-          endTime: pending.timeSlot.endTime || "",
-          isAvailable: true,
-        });
-      }
-      if (pending.patientDetails) {
-        setPatientDetails(pending.patientDetails);
-      }
-      if (pending.holdExpiresAt) {
-        setHoldExpiresAt(new Date(pending.holdExpiresAt));
-      }
-      if (pending.sessionId) {
-        setSessionId(pending.sessionId);
-      }
-      const restoredStep = Math.min(Math.max(Number(pending.currentStep || 4), 1), 4);
-      setStep(restoredStep);
-      setMaxReachedStep(restoredStep);
-    } catch (error) {
-      console.error("Failed to restore pending booking", error);
-    }
-  }, []);
 
   useEffect(() => {
     if (!selectedSpecialist || !selectedDate) {
@@ -191,6 +152,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setHoldExpiresAt(null);
     setPatientDetails(null);
     setSlots([]);
+    setBookingResult(null);
     setMaxReachedStep(2);
     setStep(2);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -203,6 +165,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setHoldExpiresAt(null);
     setPatientDetails(null);
     setSlots([]);
+    setBookingResult(null);
     setMaxReachedStep(3);
     setStep(3);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -254,75 +217,48 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // If the user is not logged in, save booking state and redirect to login
-    if (!isAuthenticated) {
-      setPatientDetails(details);
-      setPendingBooking({
-        currentStep: step,
-        callbackUrl: "/booking",
-        sessionId,
-        holdExpiresAt: holdExpiresAt?.toISOString() ?? null,
-        treatment: {
-          id: selectedTreatment.id,
-          name: selectedTreatment.name,
-          priceRange: selectedTreatment.priceRange,
-        },
-        specialist: {
-          id: selectedSpecialist.id,
-          name: selectedSpecialist.name,
-          specialization: selectedSpecialist.specialization,
-        },
-        date: selectedDate.toISOString(),
-        timeSlot: {
-          id: selectedSlot.id,
-          startTime: selectedSlot.startTime,
-          endTime: selectedSlot.endTime,
-        },
-        patientDetails: details,
-      });
-      warning(
-        "Login Required",
-        "Please log in or create an account to confirm your booking. Your selections have been saved."
-      );
-      router.push(`/login?callbackUrl=${encodeURIComponent("/booking")}`);
-      return;
-    }
-
     setPatientDetails(details);
     setIsSubmitting(true);
     setSubmissionError(null);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bookings`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/bookings/guest`, {
         method: "POST",
-        credentials: "include",
-        headers: { 
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slotId: selectedSlot.id,
           treatmentId: selectedTreatment.id,
           sessionId,
           idempotencyKey: `${selectedSlot.id}-${Date.now()}`,
           notes: details.notes || "",
+          patientName: details.name,
+          patientPhone: details.phone,
+          patientEmail: details.email,
         }),
       });
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Booking failed");
+        throw new Error(errorData.error?.message || errorData.message || "Booking failed");
       }
 
-      const booking = await res.json();
-      
-      clearPendingBooking();
+      const result = await res.json();
+      const booking = result.data || result;
+
+      setBookingResult({
+        id: booking.id,
+        status: booking.status || "confirmed",
+      });
+
       success(
         "Booking Confirmed!",
         "Your appointment has been confirmed. Check your email for details."
       );
-      
-      // Redirect to dashboard
-      router.push("/dashboard");
+
+      // Move to confirmation/success step
+      setMaxReachedStep(5);
+      setStep(5);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
       const msg = err.message || "Failed to confirm booking. Please try again.";
       setSubmissionError(msg);
@@ -335,13 +271,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     selectedSpecialist,
     selectedDate,
     selectedSlot,
-    holdExpiresAt,
     sessionId,
-    step,
-    isAuthenticated,
-    router,
     toastError,
-    warning,
     success,
   ]);
 
@@ -366,8 +297,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setHoldExpiresAt(null);
     setSlots([]);
     setSubmissionError(null);
+    setBookingResult(null);
     setSessionId(createSessionId());
-    clearPendingBooking();
   }, []);
 
   return (
@@ -391,6 +322,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         sessionId,
         isSubmitting,
         submissionError,
+        bookingResult,
         selectTreatment,
         selectSpecialist,
         selectDate,

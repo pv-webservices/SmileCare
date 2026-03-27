@@ -153,8 +153,8 @@ model Slot {
 
 model Booking {
   id                 String        @id @default(uuid())
-  patientId          String
-  patient            Patient       @relation(fields: [patientId], references: [id])
+  patientId          String?
+  patient            Patient?      @relation(fields: [patientId], references: [id])
   dentistId          String
   dentist            Dentist       @relation(fields: [dentistId], references: [id])
   treatmentId        String
@@ -169,6 +169,9 @@ model Booking {
   feedbackSent       Boolean       @default(false)
   cancellationReason String?
   idempotencyKey     String?       @unique
+  guestName          String?
+  guestEmail         String?
+  guestPhone         String?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   payment            Payment?

@@ -32,6 +32,9 @@ export async function sendPendingReminders(): Promise<void> {
 
         for (const booking of bookings) {
             try {
+                // Skip guest bookings (no patient record)
+                if (!booking.patient) continue;
+
                 await sendReminderEmail({
                     toEmail: booking.patient.user.email,
                     toName: booking.patient.user.name,

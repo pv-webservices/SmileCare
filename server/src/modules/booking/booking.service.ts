@@ -98,7 +98,10 @@ export async function createBooking(
                 idempotencyKey: idempotencyKey || undefined,
                 notes: notes || undefined,
             },
-            include: { slot: true, treatment: true },
+            include: {
+                slot: { include: { dentist: { include: { user: true } } } },
+                treatment: true,
+            },
         });
 
         // ── Clear hold fields & mark slot as taken ─────────────────────────
@@ -110,59 +113,57 @@ export async function createBooking(
                 heldBySessionId: null,
                 version: { increment: 1 },
             },
-
-                // ── Post-booking actions: Calendar + Email ────────────────────
-    // Fire and forget - don't block on calendar/email failures
-    void (async () => {
-      try {
-        const patient = await tx.patient.findUnique({
-          where: { id: patientId },
-          include: { user: true },
-        });
-
-        if (patient) {
-          const y = booking.slot.date.getFullYear();
-          const mo = String(booking.slot.date.getMonth() + 1).padStart(2, '0');
-          const dy = String(booking.slot.date.getDate()).padStart(2, '0');
-          const dateStr = `${y}-${mo}-${dy}`;
-          const formattedDate = booking.slot.date.toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-          });
-
-          // Create calendar event
-          await createCalendarEvent({
-            patientName: patient.user.name || 'Patient',
-            patientEmail: patient.user.email,
-            treatmentName: booking.treatment.name,
-            specialistName: booking.slot.dentist.user.name || 'Doctor',
-            date: dateStr,
-            startTime: booking.slot.startTime,
-            endTime: booking.slot.endTime,
-            bookingId: booking.id,
-          });
-
-          // Send confirmation email
-          await sendBookingConfirmationEmail({
-            patientName: patient.user.name || 'Patient',
-            patientEmail: patient.user.email,
-            treatmentName: booking.treatment.name,
-            specialistName: booking.slot.dentist.user.name || 'Doctor',
-            date: formattedDate,
-            startTime: booking.slot.startTime,
-            bookingId: booking.id,
-          });
-        }
-      } catch (err) {
-        console.error('[POST_BOOKING_ERROR]', err);
-      }
-    })();
         });
 
         console.log(
             `[BOOKING_CREATED] bookingId=${booking.id} slotId=${slotId} patientId=${patientId} status=confirmed`
         );
+
+        // ── Post-booking actions: Calendar + Email ────────────────────
+        // Fire and forget - don't block on calendar/email failures
+        void (async () => {
+            try {
+                const patient = await prisma.patient.findUnique({
+                    where: { id: patientId },
+                    include: { user: true },
+                });
+
+                if (patient) {
+                    const y = booking.slot.date.getFullYear();
+                    const mo = String(booking.slot.date.getMonth() + 1).padStart(2, '0');
+                    const dy = String(booking.slot.date.getDate()).padStart(2, '0');
+                    const dateStr = `${y}-${mo}-${dy}`;
+                    const formattedDate = booking.slot.date.toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                    });
+
+                    await createCalendarEvent({
+                        patientName: patient.user.name || 'Patient',
+                        patientEmail: patient.user.email,
+                        treatmentName: booking.treatment.name,
+                        specialistName: booking.slot.dentist.user.name || 'Doctor',
+                        date: dateStr,
+                        startTime: booking.slot.startTime,
+                        endTime: booking.slot.endTime,
+                        bookingId: booking.id,
+                    });
+
+                    await sendBookingConfirmationEmail({
+                        patientName: patient.user.name || 'Patient',
+                        patientEmail: patient.user.email,
+                        treatmentName: booking.treatment.name,
+                        specialistName: booking.slot.dentist.user.name || 'Doctor',
+                        date: formattedDate,
+                        startTime: booking.slot.startTime,
+                        bookingId: booking.id,
+                    });
+                }
+            } catch (err) {
+                console.error('[POST_BOOKING_ERROR]', err);
+            }
+        })();
 
         return { booking, isIdempotent: false };
     };
@@ -177,7 +178,155 @@ export async function createBooking(
     });
 }
 
-// ─── Reschedule Booking ──────────────────────────────────────────────────────
+// ─── Guest Booking Input ─────────────────────────────────────────────────────
+
+export interface GuestBookingInput {
+    slotId: string;
+    treatmentId: string;
+    sessionId: string;
+    idempotencyKey: string;
+    notes?: string;
+    patientName: string;
+    patientPhone: string;
+    patientEmail: string;
+}
+
+// ─── Create Guest Booking (No Auth Required) ─────────────────────────────────
+
+export async function createGuestBooking(input: GuestBookingInput) {
+    const { slotId, treatmentId, sessionId, idempotencyKey, notes, patientName, patientPhone, patientEmail } = input;
+
+    return prisma.$transaction(
+        async (tx) => {
+            // ── Idempotency check ──────────────────────────────────────────────
+            if (idempotencyKey) {
+                const existing = await tx.booking.findUnique({
+                    where: { idempotencyKey },
+                    include: { slot: { include: { dentist: { include: { user: true } } } }, treatment: true },
+                });
+                if (existing) {
+                    return { booking: existing, isIdempotent: true };
+                }
+            }
+
+            // ── Lock & verify slot ─────────────────────────────────────────────
+            const rows = await tx.$queryRaw<
+                Array<{
+                    id: string;
+                    dentistId: string;
+                    isAvailable: boolean;
+                    holdExpiresAt: Date | null;
+                    heldBySessionId: string | null;
+                }>
+            >`SELECT "id", "dentistId", "isAvailable", "holdExpiresAt", "heldBySessionId"
+            FROM "Slot"
+            WHERE "id" = ${slotId}
+            FOR UPDATE`;
+
+            if (rows.length === 0) {
+                throw new BookingError('SLOT_NOT_FOUND', 'Slot not found');
+            }
+
+            const slot = rows[0];
+            const now = new Date();
+
+            if (!slot.isAvailable && slot.heldBySessionId !== sessionId) {
+                throw new BookingError('SLOT_UNAVAILABLE', 'Slot is no longer available');
+            }
+
+            if (slot.heldBySessionId !== sessionId) {
+                throw new BookingError('HOLD_MISMATCH', 'Slot is not held by your session.');
+            }
+
+            if (slot.holdExpiresAt && slot.holdExpiresAt < now) {
+                throw new BookingError('HOLD_EXPIRED', 'Your hold has expired.');
+            }
+
+            // ── Create the guest booking ───────────────────────────────────────
+            const booking = await tx.booking.create({
+                data: {
+                    patientId: null,
+                    dentistId: slot.dentistId,
+                    treatmentId,
+                    slotId,
+                    status: 'confirmed',
+                    idempotencyKey: idempotencyKey || undefined,
+                    notes: notes || undefined,
+                    guestName: patientName,
+                    guestEmail: patientEmail,
+                    guestPhone: patientPhone,
+                },
+                include: {
+                    slot: { include: { dentist: { include: { user: true } } } },
+                    treatment: true,
+                },
+            });
+
+            // ── Clear hold fields & mark slot as taken ─────────────────────────
+            await tx.slot.update({
+                where: { id: slotId },
+                data: {
+                    isAvailable: false,
+                    holdExpiresAt: null,
+                    heldBySessionId: null,
+                    version: { increment: 1 },
+                },
+            });
+
+            console.log(
+                `[GUEST_BOOKING_CREATED] bookingId=${booking.id} slotId=${slotId} guest=${patientEmail} status=confirmed`
+            );
+
+            // ── Post-booking actions: Calendar + Email (fire and forget) ───────
+            void (async () => {
+                try {
+                    const y = booking.slot.date.getFullYear();
+                    const mo = String(booking.slot.date.getMonth() + 1).padStart(2, '0');
+                    const dy = String(booking.slot.date.getDate()).padStart(2, '0');
+                    const dateStr = `${y}-${mo}-${dy}`;
+                    const formattedDate = booking.slot.date.toLocaleDateString('en-IN', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                    });
+
+                    // Create calendar event
+                    await createCalendarEvent({
+                        patientName,
+                        patientEmail,
+                        treatmentName: booking.treatment.name,
+                        specialistName: booking.slot.dentist.user.name || 'Doctor',
+                        date: dateStr,
+                        startTime: booking.slot.startTime,
+                        endTime: booking.slot.endTime,
+                        bookingId: booking.id,
+                    });
+
+                    // Send confirmation email
+                    await sendBookingConfirmationEmail({
+                        patientName,
+                        patientEmail,
+                        treatmentName: booking.treatment.name,
+                        specialistName: booking.slot.dentist.user.name || 'Doctor',
+                        date: formattedDate,
+                        startTime: booking.slot.startTime,
+                        bookingId: booking.id,
+                    });
+                } catch (err) {
+                    console.error('[GUEST_POST_BOOKING_ERROR]', err);
+                }
+            })();
+
+            return { booking, isIdempotent: false };
+        },
+        {
+            isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        }
+    );
+}
+
+
 
 export async function rescheduleBooking(
     bookingId: string,

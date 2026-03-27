@@ -6,20 +6,32 @@ import {
     getSlots,
     holdSlot,
     createBooking,
+    createGuestBooking,
     rescheduleBooking,
     cancelBooking,
     getMyBookings,
 } from './booking.controller';
+import {
+    getCalendarAvailability,
+    getCalendarAvailableDates,
+} from './calendar.controller';
 
 const router = Router();
 
 // ─── Public Endpoints ────────────────────────────────────────────────────────
+
+// Calendar availability (public, no auth)
+router.get('/calendar/availability', getCalendarAvailability);
+router.get('/calendar/available-dates', getCalendarAvailableDates);
 
 // Get available slots (filtered, sorted, with period hints)
 router.get('/slots', getSlots);
 
 // Hold a slot (requires sessionId in body, no JWT needed)
 router.post('/slots/:id/hold', holdSlot);
+
+// Guest booking (no auth required)
+router.post('/bookings/guest', createGuestBooking);
 
 // ─── Authenticated Endpoints ─────────────────────────────────────────────────
 

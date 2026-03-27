@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { User, Phone, Mail, MessageSquare, CheckCircle, Info } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 
 export interface PatientDetails {
   name: string;
@@ -22,7 +21,6 @@ export default function PatientDetailsStep({
   initial,
   isSubmitting = false,
 }: PatientDetailsStepProps) {
-  const { user } = useAuth();
   const [form, setForm] = useState<PatientDetails>({
     name: initial?.name ?? "",
     phone: initial?.phone ?? "+91 ",
@@ -31,16 +29,6 @@ export default function PatientDetailsStep({
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof PatientDetails, string>>>({});
-
-  useEffect(() => {
-    if (!user) return;
-    setForm((prev) => ({
-      ...prev,
-      name: prev.name || user.name || "",
-      phone: prev.phone === "+91 " ? user.phone || "+91 " : prev.phone,
-      email: prev.email || user.email || "",
-    }));
-  }, [user]);
 
   const validate = (): boolean => {
     const errs: Partial<Record<keyof PatientDetails, string>> = {};
@@ -80,8 +68,8 @@ export default function PatientDetailsStep({
           Your Details
         </h2>
         <p className="text-slate-600 text-sm leading-relaxed">
-          Please confirm your contact information so we can prepare everything
-          before your visit.
+          Please provide your contact information so we can confirm your
+          appointment.
         </p>
       </div>
 
@@ -157,7 +145,7 @@ export default function PatientDetailsStep({
             )}
             {!errors.email && (
               <p className="mt-1.5 text-xs text-slate-500">
-                Booking confirmation will be sent here
+                A booking confirmation will be sent to this email address.
               </p>
             )}
           </div>
