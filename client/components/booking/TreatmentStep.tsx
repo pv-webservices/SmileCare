@@ -4,7 +4,7 @@ import React from "react";
 import { Stethoscope, CheckCircle2 } from "lucide-react";
 import { Treatment } from "@/lib/booking.api";
 
-/unction TreatmentStep({ treatments, selectedId, onSelect, isLoading }: TreatmentStepProps) {
+function TreatmentStep({ treatments, selectedId, onSelect, isLoading }: TreatmentStepProps) {
   if (isLoading) {
     return (
       <section>
