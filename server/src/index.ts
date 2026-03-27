@@ -11,6 +11,21 @@ import rateLimit from "express-rate-limit";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ─── Startup Diagnostics ─────────────────────────────────────────────
+console.log('[STARTUP] Starting server...');
+if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.warn('⚠️ [WARNING] GMAIL_USER or GMAIL_APP_PASSWORD is missing in .env. Emails will NOT be sent.');
+} else {
+    console.log('✅ [OK] Email configuration found.');
+}
+
+if (!process.env.GOOGLE_CALENDAR_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    console.warn('⚠️ [WARNING] GOOGLE_CALENDAR_ID or GOOGLE_SERVICE_ACCOUNT_JSON is missing in .env. Calendar events will NOT be created.');
+} else {
+    console.log('✅ [OK] Google Calendar configuration found.');
+}
+// ─────────────────────────────────────────────────────────────────────
+
 function parseCsv(value?: string) {
     return (value || "")
         .split(",")
