@@ -19,9 +19,11 @@ import {
   type Slot,
 } from "@/lib/booking.api";
 import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
 import type { PatientDetails } from "@/components/booking/PatientDetailsStep";
 import {
   getPendingBooking,
+  setPendingBooking,
   clearPendingBooking,
 } from "@/lib/booking-session";
 
@@ -64,6 +66,7 @@ const BookingContext = createContext<BookingState | null>(null);
 export function BookingProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { error: toastError, warning, success } = useToast();
+  const { user, isAuthenticated } = useAuth();
 
   const [step, setStep] = useState(1);
   const [maxReachedStep, setMaxReachedStep] = useState(1);
@@ -251,6 +254,40 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // If the user is not logged in, save booking state and redirect to login
+    if (!isAuthenticated) {
+      setPatientDetails(details);
+      setPendingBooking({
+        currentStep: step,
+        callbackUrl: "/booking",
+        sessionId,
+        holdExpiresAt: holdExpiresAt?.toISOString() ?? null,
+        treatment: {
+          id: selectedTreatment.id,
+          name: selectedTreatment.name,
+          priceRange: selectedTreatment.priceRange,
+        },
+        specialist: {
+          id: selectedSpecialist.id,
+          name: selectedSpecialist.name,
+          specialization: selectedSpecialist.specialization,
+        },
+        date: selectedDate.toISOString(),
+        timeSlot: {
+          id: selectedSlot.id,
+          startTime: selectedSlot.startTime,
+          endTime: selectedSlot.endTime,
+        },
+        patientDetails: details,
+      });
+      warning(
+        "Login Required",
+        "Please log in or create an account to confirm your booking. Your selections have been saved."
+      );
+      router.push(`/login?callbackUrl=${encodeURIComponent("/booking")}`);
+      return;
+    }
+
     setPatientDetails(details);
     setIsSubmitting(true);
     setSubmissionError(null);
@@ -258,6 +295,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bookings`, {
         method: "POST",
+        credentials: "include",
         headers: { 
           "Content-Type": "application/json",
         },
@@ -297,9 +335,13 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     selectedSpecialist,
     selectedDate,
     selectedSlot,
+    holdExpiresAt,
     sessionId,
+    step,
+    isAuthenticated,
     router,
     toastError,
+    warning,
     success,
   ]);
 
