@@ -287,7 +287,7 @@ export async function getMyBookings(req: AuthRequest, res: Response) {
         today.setHours(0, 0, 0, 0);
 
         // Use typed where clause instead of 'any'
-        const where: Parameters<typeof prisma.booking.findMany>[0]["where"] & { patientId: string } = {
+        const where: import("@prisma/client").Prisma.BookingWhereInput = {
             patientId: patient.id,
         };
         let orderBy: { slot: { date: "asc" | "desc" } }[] = [{ slot: { date: "desc" } }];
