@@ -32,7 +32,7 @@ export async function createBooking(
         if (idempotencyKey) {
             const existing = await tx.booking.findUnique({
                 where: { idempotencyKey },
-                include: { slot: true, treatment: true },
+                include: { slot: { include: { dentist: { include: { user: true } } } }, treatment: true },
             });
             if (existing) {
                 console.log(
@@ -119,6 +119,18 @@ export async function createBooking(
             `[BOOKING_CREATED] bookingId=${booking.id} slotId=${slotId} patientId=${patientId} status=confirmed`
         );
 
+        return { booking, isIdempotent: false };
+    };
+
+    // If called with an external transaction, run inside it; otherwise create one
+    const result = await (externalTx 
+        ? execute(externalTx) 
+        : prisma.$transaction(execute, {
+              isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+          }));
+
+    if (!result.isIdempotent && !externalTx) {
+        const { booking } = result;
         // ── Post-booking actions: Calendar + Email ────────────────────
         // Fire and forget - don't block on calendar/email failures
         void (async () => {
@@ -134,48 +146,41 @@ export async function createBooking(
                     const dy = String(booking.slot.date.getDate()).padStart(2, '0');
                     const dateStr = `${y}-${mo}-${dy}`;
                     const formattedDate = booking.slot.date.toLocaleDateString('en-IN', {
+                        weekday: 'long',
                         day: 'numeric',
-                        month: 'short',
+                        month: 'long',
                         year: 'numeric',
                     });
 
-                    await createCalendarEvent({
-                        patientName: patient.user.name || 'Patient',
-                        patientEmail: patient.user.email,
-                        treatmentName: booking.treatment.name,
-                        specialistName: booking.slot.dentist.user.name || 'Doctor',
-                        date: dateStr,
-                        startTime: booking.slot.startTime,
-                        endTime: booking.slot.endTime,
-                        bookingId: booking.id,
-                    });
-
-                    await sendBookingConfirmationEmail({
-                        patientName: patient.user.name || 'Patient',
-                        patientEmail: patient.user.email,
-                        treatmentName: booking.treatment.name,
-                        specialistName: booking.slot.dentist.user.name || 'Doctor',
-                        date: formattedDate,
-                        startTime: booking.slot.startTime,
-                        bookingId: booking.id,
-                    });
+                    await Promise.allSettled([
+                        createCalendarEvent({
+                            patientName: patient.user.name || 'Patient',
+                            patientEmail: patient.user.email,
+                            treatmentName: booking.treatment.name,
+                            specialistName: booking.slot.dentist.user.name || 'Doctor',
+                            date: dateStr,
+                            startTime: booking.slot.startTime,
+                            endTime: booking.slot.endTime,
+                            bookingId: booking.id,
+                        }),
+                        sendBookingConfirmationEmail({
+                            patientName: patient.user.name || 'Patient',
+                            patientEmail: patient.user.email,
+                            treatmentName: booking.treatment.name,
+                            specialistName: booking.slot.dentist.user.name || 'Doctor',
+                            date: formattedDate,
+                            startTime: booking.slot.startTime,
+                            bookingId: booking.id,
+                        })
+                    ]);
                 }
             } catch (err) {
                 console.error('[POST_BOOKING_ERROR]', err);
             }
         })();
-
-        return { booking, isIdempotent: false };
-    };
-
-    // If called with an external transaction, run inside it; otherwise create one
-    if (externalTx) {
-        return execute(externalTx);
     }
 
-    return prisma.$transaction(execute, {
-        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
-    });
+    return result;
 }
 
 // ─── Guest Booking Input ─────────────────────────────────────────────────────
@@ -196,7 +201,7 @@ export interface GuestBookingInput {
 export async function createGuestBooking(input: GuestBookingInput) {
     const { slotId, treatmentId, sessionId, idempotencyKey, notes, patientName, patientPhone, patientEmail } = input;
 
-    return prisma.$transaction(
+    const result = await prisma.$transaction(
         async (tx) => {
             // ── Idempotency check ──────────────────────────────────────────────
             if (idempotencyKey) {
@@ -277,22 +282,32 @@ export async function createGuestBooking(input: GuestBookingInput) {
                 `[GUEST_BOOKING_CREATED] bookingId=${booking.id} slotId=${slotId} guest=${patientEmail} status=confirmed`
             );
 
-            // ── Post-booking actions: Calendar + Email (fire and forget) ───────
-            void (async () => {
-                try {
-                    const y = booking.slot.date.getFullYear();
-                    const mo = String(booking.slot.date.getMonth() + 1).padStart(2, '0');
-                    const dy = String(booking.slot.date.getDate()).padStart(2, '0');
-                    const dateStr = `${y}-${mo}-${dy}`;
-                    const formattedDate = booking.slot.date.toLocaleDateString('en-IN', {
-                        weekday: 'long',
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                    });
+            return { booking, isIdempotent: false };
+        },
+        {
+            isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        }
+    );
 
+    if (!result.isIdempotent) {
+        const { booking } = result;
+        // ── Post-booking actions: Calendar + Email (fire and forget) ───────
+        void (async () => {
+            try {
+                const y = booking.slot.date.getFullYear();
+                const mo = String(booking.slot.date.getMonth() + 1).padStart(2, '0');
+                const dy = String(booking.slot.date.getDate()).padStart(2, '0');
+                const dateStr = `${y}-${mo}-${dy}`;
+                const formattedDate = booking.slot.date.toLocaleDateString('en-IN', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                });
+
+                await Promise.allSettled([
                     // Create calendar event
-                    await createCalendarEvent({
+                    createCalendarEvent({
                         patientName,
                         patientEmail,
                         treatmentName: booking.treatment.name,
@@ -301,10 +316,9 @@ export async function createGuestBooking(input: GuestBookingInput) {
                         startTime: booking.slot.startTime,
                         endTime: booking.slot.endTime,
                         bookingId: booking.id,
-                    });
-
+                    }),
                     // Send confirmation email
-                    await sendBookingConfirmationEmail({
+                    sendBookingConfirmationEmail({
                         patientName,
                         patientEmail,
                         treatmentName: booking.treatment.name,
@@ -312,18 +326,15 @@ export async function createGuestBooking(input: GuestBookingInput) {
                         date: formattedDate,
                         startTime: booking.slot.startTime,
                         bookingId: booking.id,
-                    });
-                } catch (err) {
-                    console.error('[GUEST_POST_BOOKING_ERROR]', err);
-                }
-            })();
+                    })
+                ]);
+            } catch (err) {
+                console.error('[GUEST_POST_BOOKING_ERROR]', err);
+            }
+        })();
+    }
 
-            return { booking, isIdempotent: false };
-        },
-        {
-            isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
-        }
-    );
+    return result;
 }
 
 

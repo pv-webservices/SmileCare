@@ -26,10 +26,12 @@ export async function sendBookingConfirmationEmail(
 ): Promise<void> {
   try {
     const gmailUser = process.env.GMAIL_USER;
-    if (!gmailUser) {
-      console.warn('[EMAIL_SERVICE] GMAIL_USER not set, skipping email');
+    if (!gmailUser || !process.env.GMAIL_APP_PASSWORD) {
+      console.error('[EMAIL_SERVICE] CRITICAL: GMAIL_USER or GMAIL_APP_PASSWORD not set in environment. Email NOT sent to:', data.patientEmail);
       return;
     }
+
+    console.log(`[EMAIL_SERVICE] Attempting to send confirmation to: ${data.patientEmail}`);
 
     const transporter = createTransporter();
 
