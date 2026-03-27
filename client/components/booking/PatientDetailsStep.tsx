@@ -136,8 +136,8 @@ export default function PatientDetailsStep({
 
           {/* Email */}
           <div>
-            abel className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-              <Mail size={16} />
+              <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">              
+                <Mail size={16} />
               Email Address
             </label>
             <input
@@ -164,8 +164,8 @@ export default function PatientDetailsStep({
 
           {/* Notes */}
           <div>
-            abel className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-              <MessageSquare size={16} />
+              <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">              
+                <MessageSquare size={16} />
               Special Notes{" "}
               <span className="text-xs font-normal text-slate-400">(Optional)</span>
             </label>
