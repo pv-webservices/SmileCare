@@ -4,6 +4,13 @@ import React from "react";
 import { Stethoscope, CheckCircle2 } from "lucide-react";
 import { Treatment } from "@/lib/booking.api";
 
+interface TreatmentStepProps {
+  treatments: Treatment[];
+  selectedId: string | null;
+  onSelect: (treatment: Treatment) => void;
+  isLoading: boolean;
+}
+
 function TreatmentStep({ treatments, selectedId, onSelect, isLoading }: TreatmentStepProps) {
   if (isLoading) {
     return (
@@ -74,7 +81,15 @@ function TreatmentStep({ treatments, selectedId, onSelect, isLoading }: Treatmen
               </div>
 
               <div className="mt-4 pt-4 border-t border-slate-100">
-    </div>
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                  {treatment.category?.name || "General"}
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

@@ -32,7 +32,7 @@ function BookingPageInner() {
         selectSpecialist,
         selectDate,
         selectSlot,
-        proceedToPayment,
+        confirmBooking,
         handleHoldExpired,
     } = useBooking();
 
@@ -134,7 +134,7 @@ function BookingPageInner() {
 
                         {step === 4 && (
                             <PatientDetailsStep
-                                onSubmit={proceedToPayment}
+                                onSubmit={confirmBooking}
                                 initial={patientDetails}
                             />
                         )}
