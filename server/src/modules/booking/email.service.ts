@@ -1,9 +1,11 @@
-// ─── Email Notification Service ───────────────────────────────────────────
+// ─── Email Notification Service ──────────────────────────────────────────────────
 import nodemailer from 'nodemailer';
 
 function createTransporter() {
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_APP_PASSWORD,
@@ -16,7 +18,7 @@ export interface BookingConfirmationData {
   patientEmail: string;
   treatmentName: string;
   specialistName: string;
-  date: string;       // e.g. "27 Mar 2026"
+  date: string;        // e.g. "27 Mar 2026"
   startTime: string;  // e.g. "10:00"
   bookingId: string;
 }
@@ -35,8 +37,11 @@ export async function sendBookingConfirmationEmail(
 
     const transporter = createTransporter();
 
-    const html = `
-<!DOCTYPE html>
+    // Verify connection before sending
+    await transporter.verify();
+    console.log('[EMAIL_SERVICE] SMTP connection verified successfully');
+
+    const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -68,8 +73,7 @@ export async function sendBookingConfirmationEmail(
     </div>
     <div class="body">
       <h2>Hi ${data.patientName},</h2>
-      <p style="color:#555; font-size:14px; margin-bottom:24px;">Your appointment has been successfully booked. Here are your details:</p>
-
+      <p>Your appointment has been successfully booked. Here are your details:</p>
       <div class="detail-row">
         <span class="detail-label">Treatment</span>
         <span class="detail-value">${data.treatmentName}</span>
@@ -86,13 +90,11 @@ export async function sendBookingConfirmationEmail(
         <span class="detail-label">Time</span>
         <span class="detail-value">${data.startTime}</span>
       </div>
-
       <div class="booking-id">
         <span>Your Booking Reference</span>
         <code>${data.bookingId.slice(0, 8).toUpperCase()}</code>
       </div>
-
-      <p style="color:#555; font-size:13px;">If you need to cancel or reschedule, please contact us at least 24 hours in advance.</p>
+      <p>If you need to cancel or reschedule, please contact us at least 24 hours in advance.</p>
     </div>
     <div class="footer">
       <p>SmileCare &mdash; Premium Dental Care &mdash; This is an automated email, please do not reply.</p>
@@ -112,5 +114,20 @@ export async function sendBookingConfirmationEmail(
   } catch (err) {
     console.error('[EMAIL_SERVICE_ERROR]', err);
     // Non-fatal: don't fail the booking if email fails
+  }
+}
+
+// Test email connection (for debugging)
+export async function testEmailConnection(): Promise<{ success: boolean; error?: string; gmailUser?: string }> {
+  try {
+    const gmailUser = process.env.GMAIL_USER;
+    if (!gmailUser || !process.env.GMAIL_APP_PASSWORD) {
+      return { success: false, error: 'GMAIL_USER or GMAIL_APP_PASSWORD not set' };
+    }
+    const transporter = createTransporter();
+    await transporter.verify();
+    return { success: true, gmailUser };
+  } catch (err: any) {
+    return { success: false, error: err?.message || String(err) };
   }
 }
