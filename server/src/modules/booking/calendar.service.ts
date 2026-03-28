@@ -83,3 +83,16 @@ export async function createCalendarEvent(booking: CalendarBooking): Promise<str
     return null; // Non-fatal: don't fail the booking if calendar fails
   }
 }
+
+  // Test calendar connection (for debugging)
+export async function testCalendarConnection(): Promise<{ success: boolean; error?: string; calendarId?: string }> {
+  try {
+    const calendarId = process.env.GOOGLE_CALENDAR_ID;
+    if (!calendarId) return { success: false, error: 'GOOGLE_CALENDAR_ID env var is missing' };
+    const calendar = getCalendarClient();
+    const result = await calendar.calendars.get({ calendarId });
+    return { success: true, calendarId: result.data.summary || calendarId };
+  } catch (err: any) {
+    return { success: false, error: err?.message || String(err) };
+  }
+}
