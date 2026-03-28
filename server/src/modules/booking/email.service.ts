@@ -1,7 +1,10 @@
 // ─── Email Notification Service (Gmail SMTP via Nodemailer) ────────────────
 // Sends to ANY email address using Gmail + App Password.
 // No custom domain required.
-import * as nodemailer from 'nodemailer';
+// Uses require() for CJS compatibility (package.json type: commonjs).
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const nodemailer = require('nodemailer');
 
 export interface BookingConfirmationData {
   patientName: string;
@@ -13,7 +16,7 @@ export interface BookingConfirmationData {
   bookingId: string;
 }
 
-// Creates a reusable transporter using Gmail SMTP
+// Creates a Gmail SMTP transporter
 function createTransporter() {
   const gmailUser = process.env.GMAIL_USER;
   const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
@@ -23,7 +26,9 @@ function createTransporter() {
   }
 
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,           // SSL
     auth: {
       user: gmailUser,
       pass: gmailAppPassword,
@@ -45,7 +50,7 @@ export async function sendBookingConfirmationEmail(
 
     console.log(`[EMAIL_SERVICE] Attempting to send confirmation to: ${data.patientEmail}`);
 
-    // Normalise specialist name: strip duplicate Dr. prefix if present
+    // Normalise specialist name: ensure exactly one "Dr." prefix
     const specialistDisplay = data.specialistName.replace(/^Dr\.\s*/i, 'Dr. ');
 
     const html = `<!DOCTYPE html>
@@ -110,7 +115,11 @@ export async function sendBookingConfirmationEmail(
 </body>
 </html>`;
 
-    const transporter = createTransporter()!;
+    const transporter = createTransporter();
+    if (!transporter) {
+      console.error('[EMAIL_SERVICE] Could not create transporter.');
+      return;
+    }
 
     const mailOptions = {
       from: `SmileCare <${gmailUser}>`,
@@ -123,12 +132,12 @@ export async function sendBookingConfirmationEmail(
     console.log(`[EMAIL_SENT] to=${data.patientEmail} bookingId=${data.bookingId} messageId=${info.messageId}`);
 
   } catch (err: any) {
-    console.error('[EMAIL_SERVICE_ERROR]', err?.message || err);
+    console.error('[EMAIL_SERVICE_ERROR]', err?.message || String(err));
     // Non-fatal: don't fail the booking if email fails
   }
 }
 
-// Test email connection (for debugging via /api/email/test)
+// Test SMTP connection (hit /email-test on Render to verify)
 export async function testEmailConnection(): Promise<{ success: boolean; error?: string; detail?: string }> {
   try {
     const gmailUser = process.env.GMAIL_USER;
@@ -141,12 +150,16 @@ export async function testEmailConnection(): Promise<{ success: boolean; error?:
       };
     }
 
-    const transporter = createTransporter()!;
+    const transporter = createTransporter();
+    if (!transporter) {
+      return { success: false, error: 'Could not create transporter.' };
+    }
+
     await transporter.verify();
 
     return {
       success: true,
-      detail: `Gmail SMTP connected successfully as ${gmailUser}. Can send to any email address.`,
+      detail: `Gmail SMTP (port 465 SSL) connected successfully as ${gmailUser}. Can send to any email address.`,
     };
   } catch (err: any) {
     return {
