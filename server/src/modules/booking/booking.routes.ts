@@ -16,6 +16,7 @@ import {
     getCalendarAvailableDates,
 } from './calendar.controller';
 import { testCalendarConnection } from './calendar.service';
+import { testEmailConnection } from './email.service';
 
 const router = Router();
 
@@ -28,6 +29,11 @@ router.get('/calendar/available-dates', getCalendarAvailableDates);
 router.get('/calendar/test', async (_req, res) => {
   const result = await testCalendarConnection();
   res.json(result);
+});
+// Test Gmail SMTP connection (debug endpoint)
+router.get('/email/test', async (_req, res) => {
+    const result = await testEmailConnection();
+    res.json(result);
 });
 
 // Get available slots (filtered, sorted, with period hints)
