@@ -11,15 +11,15 @@ import rateLimit from "express-rate-limit";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ─── Startup Diagnostics ─────────────────────────────────────────
-const missingEmailConfig = !process.env.RESEND_API_KEY;
+// ─── Startup Diagnostics ─────────────────────────────────────────────
+const missingEmailConfig = !process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD;
 const missingCalendarConfig = !process.env.GOOGLE_CALENDAR_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
 
 console.log('[STARTUP] Starting server...');
 if (missingEmailConfig) {
-      console.warn('⚠️ [WARNING] RESEND_API_KEY is missing in .env. Emails will NOT be sent.');
+    console.warn('⚠️ [WARNING] GMAIL_USER or GMAIL_APP_PASSWORD is missing in .env. Emails will NOT be sent.');
 } else {
-  console.log('✅ [OK] Email configuration found.');
+  console.log('✅ [OK] Email configuration found (Gmail SMTP).');
 }
 
 if (missingCalendarConfig) {
@@ -29,7 +29,7 @@ if (missingCalendarConfig) {
 }
 // ─────────────────────────────────────────────────────────────────
 
-// ─── Auto Slot Refresh ──────────────────────────────────────────
+// ─── Auto Slot Refresh ────────────────────────────────────────────
 const TIME_SLOTS = [
   { startTime: '09:00 AM', endTime: '09:30 AM' },
   { startTime: '09:30 AM', endTime: '10:00 AM' },
@@ -61,12 +61,10 @@ async function autoRefreshSlots(daysAhead = 90): Promise<void> {
       for (let i = 1; i <= daysAhead; i++) {
         const slotDate = new Date(Date.UTC(baseYear, baseMonth, baseDay + i));
         if (slotDate.getUTCDay() === 0) continue; // skip Sundays
-
         const existing = await prisma.slot.findFirst({
           where: { dentistId: dentist.id, date: slotDate },
         });
         if (existing) continue;
-
         for (const time of TIME_SLOTS) {
           await prisma.slot.create({
             data: {
@@ -85,7 +83,7 @@ async function autoRefreshSlots(daysAhead = 90): Promise<void> {
     if (created > 0) {
       console.log(`[SLOT_REFRESH] Created ${created} new slots for the next ${daysAhead} days.`);
     } else {
-      console.log(`[SLOT_REFRESH] Slots up to date — no new slots needed.`);
+      console.log(`[SLOT_REFRESH] Slots up to date \u2014 no new slots needed.`);
     }
   } catch (err) {
     console.error('[SLOT_REFRESH_ERROR]', err);
@@ -100,7 +98,7 @@ function parseCsv(value?: string) {
     .filter(Boolean);
 }
 
-const allowedOrigins = new Set<string>([
+const allowedOrigins = new Set([
   "http://localhost:3000",
   ...parseCsv(process.env.CLIENT_URL),
   ...parseCsv(process.env.CLIENT_URLS),
@@ -112,21 +110,22 @@ const originPatterns = [
 ].map((pattern) => new RegExp(pattern));
 
 app.use(helmet());
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) {
-      callback(null, true);
-      return;
-    }
-    if (allowedOrigins.has(origin) || originPatterns.some((pattern) => pattern.test(origin))) {
-      callback(null, true);
-      return;
-    }
-    callback(new Error(`CORS blocked: ${origin}`));
-  },
-  credentials: true,
-}));
-
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      if (allowedOrigins.has(origin) || originPatterns.some((pattern) => pattern.test(origin))) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`CORS blocked: ${origin}`));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 
@@ -176,8 +175,12 @@ app.get("/diag", (_req: Request, res: Response) => {
   res.json({
     hasGoogleCalendarId: !!process.env.GOOGLE_CALENDAR_ID,
     hasGoogleServiceAccount: !!process.env.GOOGLE_SERVICE_ACCOUNT_JSON,
-    googleCalendarId: process.env.GOOGLE_CALENDAR_ID ? process.env.GOOGLE_CALENDAR_ID.substring(0, 20) + '...' : null,
-        hasResendApiKey: !!process.env.RESEND_API_KEY,    
+    googleCalendarId: process.env.GOOGLE_CALENDAR_ID
+      ? process.env.GOOGLE_CALENDAR_ID.substring(0, 20) + '...'
+      : null,
+    hasGmailUser: !!process.env.GMAIL_USER,
+    hasGmailAppPassword: !!process.env.GMAIL_APP_PASSWORD,
+    gmailUser: process.env.GMAIL_USER || null,
     nodeEnv: process.env.NODE_ENV,
   });
 });
