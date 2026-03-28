@@ -198,7 +198,7 @@ app.get("/diag", (_req: Request, res: Response) => {
 // ─── Email Test Endpoint ──────────────────────────────────────────
 app.get("/email-test", async (_req: Request, res: Response) => {
   try {
-    const { sendBookingConfirmation } = require('./modules/booking/email.service');
+    const { sendBookingConfirmationEmail } = require('./modules/booking/email.service');
     
     const testData = {
       patientName: "Test User",
@@ -210,7 +210,7 @@ app.get("/email-test", async (_req: Request, res: Response) => {
       bookingId: "TEST-123",
     };
 
-    await sendBookingConfirmation(testData);
+    await sendBookingConfirmationEmail(testData);
     
     res.json({ 
       success: true, 
