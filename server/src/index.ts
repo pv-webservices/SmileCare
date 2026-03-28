@@ -12,12 +12,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ─── Startup Diagnostics ─────────────────────────────────────────
-const missingEmailConfig = !process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD;
+const missingEmailConfig = !process.env.RESEND_API_KEY;
 const missingCalendarConfig = !process.env.GOOGLE_CALENDAR_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
 
 console.log('[STARTUP] Starting server...');
 if (missingEmailConfig) {
-  console.warn('⚠️ [WARNING] GMAIL_USER or GMAIL_APP_PASSWORD is missing in .env. Emails will NOT be sent.');
+      console.warn('⚠️ [WARNING] RESEND_API_KEY is missing in .env. Emails will NOT be sent.');
 } else {
   console.log('✅ [OK] Email configuration found.');
 }
@@ -177,9 +177,7 @@ app.get("/diag", (_req: Request, res: Response) => {
     hasGoogleCalendarId: !!process.env.GOOGLE_CALENDAR_ID,
     hasGoogleServiceAccount: !!process.env.GOOGLE_SERVICE_ACCOUNT_JSON,
     googleCalendarId: process.env.GOOGLE_CALENDAR_ID ? process.env.GOOGLE_CALENDAR_ID.substring(0, 20) + '...' : null,
-    hasGmailUser: !!process.env.GMAIL_USER,
-    hasGmailAppPassword: !!process.env.GMAIL_APP_PASSWORD,
-    gmailUser: process.env.GMAIL_USER || null,
+        hasResendApiKey: !!process.env.RESEND_API_KEY,    
     nodeEnv: process.env.NODE_ENV,
   });
 });
