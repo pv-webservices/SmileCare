@@ -15,6 +15,7 @@ import {
     getCalendarAvailability,
     getCalendarAvailableDates,
 } from './calendar.controller';
+import { testCalendarConnection } from './calendar.service';
 
 const router = Router();
 
@@ -23,6 +24,11 @@ const router = Router();
 // Calendar availability (public, no auth)
 router.get('/calendar/availability', getCalendarAvailability);
 router.get('/calendar/available-dates', getCalendarAvailableDates);
+// Test Google Calendar connection (debug endpoint)
+router.get('/calendar/test', async (_req, res) => {
+  const result = await testCalendarConnection();
+  res.json(result);
+});
 
 // Get available slots (filtered, sorted, with period hints)
 router.get('/slots', getSlots);
