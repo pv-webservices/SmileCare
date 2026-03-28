@@ -12,24 +12,28 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ─── Startup Diagnostics ─────────────────────────────────────────────
+
 const missingEmailConfig = !process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD;
 const missingCalendarConfig = !process.env.GOOGLE_CALENDAR_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
 
 console.log('[STARTUP] Starting server...');
+
 if (missingEmailConfig) {
-    console.warn('⚠️ [WARNING] GMAIL_USER or GMAIL_APP_PASSWORD is missing in .env. Emails will NOT be sent.');
+  console.warn('⚠️  [WARNING] GMAIL_USER or GMAIL_APP_PASSWORD is missing in .env. Emails will NOT be sent.');
 } else {
   console.log('✅ [OK] Email configuration found (Gmail SMTP).');
 }
 
 if (missingCalendarConfig) {
-  console.warn('⚠️ [WARNING] GOOGLE_CALENDAR_ID or GOOGLE_SERVICE_ACCOUNT_JSON is missing in .env. Calendar events will NOT be created.');
+  console.warn('⚠️  [WARNING] GOOGLE_CALENDAR_ID or GOOGLE_SERVICE_ACCOUNT_JSON is missing in .env. Calendar events will NOT be created.');
 } else {
   console.log('✅ [OK] Google Calendar configuration found.');
 }
+
 // ─────────────────────────────────────────────────────────────────
 
 // ─── Auto Slot Refresh ────────────────────────────────────────────
+
 const TIME_SLOTS = [
   { startTime: '09:00 AM', endTime: '09:30 AM' },
   { startTime: '09:30 AM', endTime: '10:00 AM' },
@@ -61,10 +65,12 @@ async function autoRefreshSlots(daysAhead = 90): Promise<void> {
       for (let i = 1; i <= daysAhead; i++) {
         const slotDate = new Date(Date.UTC(baseYear, baseMonth, baseDay + i));
         if (slotDate.getUTCDay() === 0) continue; // skip Sundays
+
         const existing = await prisma.slot.findFirst({
           where: { dentistId: dentist.id, date: slotDate },
         });
         if (existing) continue;
+
         for (const time of TIME_SLOTS) {
           await prisma.slot.create({
             data: {
@@ -80,6 +86,7 @@ async function autoRefreshSlots(daysAhead = 90): Promise<void> {
         }
       }
     }
+
     if (created > 0) {
       console.log(`[SLOT_REFRESH] Created ${created} new slots for the next ${daysAhead} days.`);
     } else {
@@ -89,6 +96,7 @@ async function autoRefreshSlots(daysAhead = 90): Promise<void> {
     console.error('[SLOT_REFRESH_ERROR]', err);
   }
 }
+
 // ─────────────────────────────────────────────────────────────────
 
 function parseCsv(value?: string) {
@@ -126,6 +134,7 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -137,6 +146,7 @@ const globalLimiter = rateLimit({
   skip: (req) => req.path === "/health" || process.env.NODE_ENV === "test",
   message: { success: false, error: "Too many requests." },
 });
+
 app.use(globalLimiter);
 
 import authRoutes from "./routes/authRoutes";
@@ -183,6 +193,37 @@ app.get("/diag", (_req: Request, res: Response) => {
     gmailUser: process.env.GMAIL_USER || null,
     nodeEnv: process.env.NODE_ENV,
   });
+});
+
+// ─── Email Test Endpoint ──────────────────────────────────────────
+app.get("/api/email-test", async (_req: Request, res: Response) => {
+  try {
+    const { sendBookingConfirmation } = require('./modules/booking/email.service');
+    
+    const testData = {
+      patientName: "Test User",
+      patientEmail: process.env.GMAIL_USER || "test@example.com",
+      treatmentName: "General Checkup",
+      specialistName: "Dr. Smith",
+      date: "30 March 2026",
+      startTime: "10:00 AM",
+      bookingId: "TEST-123",
+    };
+
+    await sendBookingConfirmation(testData);
+    
+    res.json({ 
+      success: true, 
+      message: "Test email sent successfully",
+      sentTo: testData.patientEmail
+    });
+  } catch (error: any) {
+    console.error('[EMAIL_TEST_ERROR]', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || "Failed to send test email"
+    });
+  }
 });
 
 import { startReminderJob } from "./modules/reminder/reminder.service";
