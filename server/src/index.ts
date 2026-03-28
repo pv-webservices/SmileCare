@@ -172,6 +172,18 @@ app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "OK", message: "SmileCare API is running" });
 });
 
+app.get("/diag", (_req: Request, res: Response) => {
+  res.json({
+    hasGoogleCalendarId: !!process.env.GOOGLE_CALENDAR_ID,
+    hasGoogleServiceAccount: !!process.env.GOOGLE_SERVICE_ACCOUNT_JSON,
+    googleCalendarId: process.env.GOOGLE_CALENDAR_ID ? process.env.GOOGLE_CALENDAR_ID.substring(0, 20) + '...' : null,
+    hasGmailUser: !!process.env.GMAIL_USER,
+    hasGmailAppPassword: !!process.env.GMAIL_APP_PASSWORD,
+    gmailUser: process.env.GMAIL_USER || null,
+    nodeEnv: process.env.NODE_ENV,
+  });
+});
+
 import { startReminderJob } from "./modules/reminder/reminder.service";
 
 const server = app.listen(PORT, () => {
