@@ -7,7 +7,7 @@ export interface BookingConfirmationData {
   treatmentName: string;
   specialistName: string;
   date: string;        // e.g. "27 Mar 2026"
-  startTime: string;  // e.g. "10:00 AM"
+  startTime: string;   // e.g. "10:00 AM"
   bookingId: string;
 }
 
@@ -24,6 +24,9 @@ export async function sendBookingConfirmationEmail(
     }
 
     console.log(`[EMAIL_SERVICE] Attempting to send confirmation to: ${data.patientEmail}`);
+
+    // Strip any leading 'Dr. ' prefix to avoid duplication since specialistName already contains it
+    const specialistDisplay = data.specialistName.replace(/^Dr\.\s*/i, 'Dr. ');
 
     const html = `<!DOCTYPE html>
 <html>
@@ -51,7 +54,7 @@ export async function sendBookingConfirmationEmail(
 <body>
   <div class="container">
     <div class="header">
-      <div class="check-icon">✅</div>
+      <div class="check-icon">&#x2705;</div>
       <h1>SmileCare</h1>
       <p>Booking Confirmed</p>
     </div>
@@ -64,7 +67,7 @@ export async function sendBookingConfirmationEmail(
       </div>
       <div class="detail-row">
         <span class="detail-label">Specialist</span>
-        <span class="detail-value">Dr. ${data.specialistName}</span>
+        <span class="detail-value">${specialistDisplay}</span>
       </div>
       <div class="detail-row">
         <span class="detail-label">Date</span>
@@ -96,7 +99,7 @@ export async function sendBookingConfirmationEmail(
       body: JSON.stringify({
         from: fromEmail,
         to: [data.patientEmail],
-        subject: `✅ Booking Confirmed – ${data.treatmentName} on ${data.date}`,
+        subject: `\u2705 Booking Confirmed \u2013 ${data.treatmentName} on ${data.date}`,
         html,
       }),
     });
@@ -104,7 +107,11 @@ export async function sendBookingConfirmationEmail(
     const result = await response.json() as any;
 
     if (!response.ok) {
-      console.error('[EMAIL_SERVICE_ERROR] Resend API error:', result);
+      console.error('[EMAIL_SERVICE_ERROR] Resend API error:', JSON.stringify(result));
+      console.error('[EMAIL_SERVICE_ERROR] NOTE: On Resend free tier without a verified domain,');
+      console.error('[EMAIL_SERVICE_ERROR] emails can only be sent to the Resend account owner email.');
+      console.error('[EMAIL_SERVICE_ERROR] To send to any email, verify a custom domain at resend.com/domains');
+      console.error('[EMAIL_SERVICE_ERROR] and set RESEND_FROM_EMAIL=noreply@yourdomain.com in Render env vars.');
       return;
     }
 
@@ -122,15 +129,27 @@ export async function testEmailConnection(): Promise<{ success: boolean; error?:
     if (!resendApiKey) {
       return { success: false, error: 'RESEND_API_KEY not set' };
     }
+
     // Test by calling the Resend API domains endpoint
     const response = await fetch('https://api.resend.com/domains', {
       headers: { 'Authorization': `Bearer ${resendApiKey}` },
     });
+
     const result = await response.json() as any;
+
     if (!response.ok) {
       return { success: false, error: `Resend API returned ${response.status}: ${JSON.stringify(result)}` };
     }
-    return { success: true, detail: `Resend API key valid. RESEND_FROM_EMAIL=${process.env.RESEND_FROM_EMAIL || 'using default onboarding@resend.dev'}` };
+
+    const verifiedDomains = result?.data?.filter((d: any) => d.status === 'verified') || [];
+    const domainWarning = verifiedDomains.length === 0
+      ? ' WARNING: No verified domains found. Emails can only be sent to the Resend account owner email. Add a verified domain at resend.com/domains to send to any email address.'
+      : ` Verified domains: ${verifiedDomains.map((d: any) => d.name).join(', ')}`;
+
+    return {
+      success: true,
+      detail: `Resend API key valid. RESEND_FROM_EMAIL=${process.env.RESEND_FROM_EMAIL || 'using default onboarding@resend.dev'}.${domainWarning}`
+    };
   } catch (err: any) {
     return { success: false, error: err?.message || String(err) };
   }
