@@ -1,5 +1,7 @@
-// ─── Email Notification Service (Resend HTTP API) ──────────────────────────────
-// Uses Resend (https://resend.com) - HTTPS-based, no SMTP port blocking
+// ─── Email Notification Service (Gmail SMTP via Nodemailer) ────────────────
+// Sends to ANY email address using Gmail + App Password.
+// No custom domain required.
+import * as nodemailer from 'nodemailer';
 
 export interface BookingConfirmationData {
   patientName: string;
@@ -11,21 +13,39 @@ export interface BookingConfirmationData {
   bookingId: string;
 }
 
+// Creates a reusable transporter using Gmail SMTP
+function createTransporter() {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+
+  if (!gmailUser || !gmailAppPassword) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: gmailUser,
+      pass: gmailAppPassword,
+    },
+  });
+}
+
 export async function sendBookingConfirmationEmail(
   data: BookingConfirmationData
 ): Promise<void> {
   try {
-    const resendApiKey = process.env.RESEND_API_KEY;
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'SmileCare <onboarding@resend.dev>';
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
 
-    if (!resendApiKey) {
-      console.error('[EMAIL_SERVICE] CRITICAL: RESEND_API_KEY not set. Email NOT sent to:', data.patientEmail);
+    if (!gmailUser || !gmailAppPassword) {
+      console.error('[EMAIL_SERVICE] CRITICAL: GMAIL_USER or GMAIL_APP_PASSWORD not set. Email NOT sent to:', data.patientEmail);
       return;
     }
 
     console.log(`[EMAIL_SERVICE] Attempting to send confirmation to: ${data.patientEmail}`);
 
-    // Strip any leading 'Dr. ' prefix to avoid duplication since specialistName already contains it
+    // Normalise specialist name: strip duplicate Dr. prefix if present
     const specialistDisplay = data.specialistName.replace(/^Dr\.\s*/i, 'Dr. ');
 
     const html = `<!DOCTYPE html>
@@ -90,67 +110,48 @@ export async function sendBookingConfirmationEmail(
 </body>
 </html>`;
 
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [data.patientEmail],
-        subject: `\u2705 Booking Confirmed \u2013 ${data.treatmentName} on ${data.date}`,
-        html,
-      }),
-    });
+    const transporter = createTransporter()!;
 
-    const result = await response.json() as any;
+    const mailOptions = {
+      from: `SmileCare <${gmailUser}>`,
+      to: data.patientEmail,
+      subject: `\u2705 Booking Confirmed \u2013 ${data.treatmentName} on ${data.date}`,
+      html,
+    };
 
-    if (!response.ok) {
-      console.error('[EMAIL_SERVICE_ERROR] Resend API error:', JSON.stringify(result));
-      console.error('[EMAIL_SERVICE_ERROR] NOTE: On Resend free tier without a verified domain,');
-      console.error('[EMAIL_SERVICE_ERROR] emails can only be sent to the Resend account owner email.');
-      console.error('[EMAIL_SERVICE_ERROR] To send to any email, verify a custom domain at resend.com/domains');
-      console.error('[EMAIL_SERVICE_ERROR] and set RESEND_FROM_EMAIL=noreply@yourdomain.com in Render env vars.');
-      return;
-    }
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL_SENT] to=${data.patientEmail} bookingId=${data.bookingId} messageId=${info.messageId}`);
 
-    console.log(`[EMAIL_SENT] to=${data.patientEmail} bookingId=${data.bookingId} resendId=${result.id}`);
-  } catch (err) {
-    console.error('[EMAIL_SERVICE_ERROR]', err);
+  } catch (err: any) {
+    console.error('[EMAIL_SERVICE_ERROR]', err?.message || err);
     // Non-fatal: don't fail the booking if email fails
   }
 }
 
-// Test email connection (for debugging)
+// Test email connection (for debugging via /api/email/test)
 export async function testEmailConnection(): Promise<{ success: boolean; error?: string; detail?: string }> {
   try {
-    const resendApiKey = process.env.RESEND_API_KEY;
-    if (!resendApiKey) {
-      return { success: false, error: 'RESEND_API_KEY not set' };
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+
+    if (!gmailUser || !gmailAppPassword) {
+      return {
+        success: false,
+        error: 'GMAIL_USER or GMAIL_APP_PASSWORD environment variable is not set.',
+      };
     }
 
-    // Test by calling the Resend API domains endpoint
-    const response = await fetch('https://api.resend.com/domains', {
-      headers: { 'Authorization': `Bearer ${resendApiKey}` },
-    });
-
-    const result = await response.json() as any;
-
-    if (!response.ok) {
-      return { success: false, error: `Resend API returned ${response.status}: ${JSON.stringify(result)}` };
-    }
-
-    const verifiedDomains = result?.data?.filter((d: any) => d.status === 'verified') || [];
-    const domainWarning = verifiedDomains.length === 0
-      ? ' WARNING: No verified domains found. Emails can only be sent to the Resend account owner email. Add a verified domain at resend.com/domains to send to any email address.'
-      : ` Verified domains: ${verifiedDomains.map((d: any) => d.name).join(', ')}`;
+    const transporter = createTransporter()!;
+    await transporter.verify();
 
     return {
       success: true,
-      detail: `Resend API key valid. RESEND_FROM_EMAIL=${process.env.RESEND_FROM_EMAIL || 'using default onboarding@resend.dev'}.${domainWarning}`
+      detail: `Gmail SMTP connected successfully as ${gmailUser}. Can send to any email address.`,
     };
   } catch (err: any) {
-    return { success: false, error: err?.message || String(err) };
+    return {
+      success: false,
+      error: err?.message || String(err),
+    };
   }
 }
