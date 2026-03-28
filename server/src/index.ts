@@ -196,7 +196,7 @@ app.get("/diag", (_req: Request, res: Response) => {
 });
 
 // ─── Email Test Endpoint ──────────────────────────────────────────
-app.get("/api/email-test", async (_req: Request, res: Response) => {
+app.get("/email-test", async (_req: Request, res: Response) => {
   try {
     const { sendBookingConfirmation } = require('./modules/booking/email.service');
     
