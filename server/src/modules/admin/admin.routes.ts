@@ -8,6 +8,7 @@ import {
     listUsers,
     patchDentistStatus,
     listDentists,
+    refreshSlots,
 } from './admin.controller';
 
 const router = Router();
@@ -25,5 +26,7 @@ router.get('/admin/users', listUsers);
 router.patch('/admin/dentists/:id/status', patchDentistStatus);
 // GET  /api/admin/dentists
 router.get('/admin/dentists', listDentists);
+// POST /api/admin/slots/refresh?days=90  — generate future slots for all dentists
+router.post('/admin/slots/refresh', refreshSlots);
 
 export default router;
